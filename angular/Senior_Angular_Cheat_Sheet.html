@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    *, *::before, *::after { box-sizing: border-box; }
+    @page {
+        size: A4;
+        margin: 10mm;
+        background-color: #ffffff;
+    }
+    body {
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        font-size: 8pt;
+        color: #111;
+        margin: 0;
+        padding: 0;
+        line-height: 1.25;
+    }
+    .header {
+        text-align: center;
+        border-bottom: 2px solid #333;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+    }
+    .header h1 {
+        margin: 0;
+        font-size: 14pt;
+        text-transform: uppercase;
+        color: #1e2b3c;
+    }
+    .columns {
+        column-count: 2;
+        column-gap: 6mm;
+    }
+    .section {
+        margin-bottom: 10px;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    h2 {
+        font-size: 9.5pt;
+        color: #0078d4;
+        border-bottom: 1px solid #eee;
+        margin: 0 0 4px 0;
+        padding-bottom: 2px;
+        text-transform: uppercase;
+    }
+    h3 {
+        font-size: 8.5pt;
+        margin: 4px 0 2px 0;
+        color: #333;
+    }
+    ul { margin: 0; padding-left: 14px; }
+    li { margin-bottom: 3px; }
+    code {
+        background-color: #f4f4f4;
+        padding: 1px 2px;
+        border-radius: 2px;
+        font-family: 'Consolas', monospace;
+        font-size: 7.5pt;
+        color: #d83b01;
+    }
+    .highlight { font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Senior Angular & RxJS: Complete Technical Interview Cheat Sheet</h1>
+</div>
+
+<div class="columns">
+    <div class="section">
+        <h2>Modern Architecture & DI</h2>
+        <ul>
+            <li><strong>Standalone Components:</strong> The modern default (Angular 14+). Eliminates <code>NgModules</code>. Dependencies are imported directly via the <code>imports: []</code> array in the <code>@Component</code> decorator.</li>
+            <li><strong>The <code>inject()</code> Function:</strong> Modern alternative to constructor injection. Enables functional guards, functional interceptors, and reusable logic blocks outside of classes.</li>
+            <li><strong>Dependency Injection (DI):</strong> <code>providedIn: 'root'</code> creates a global singleton. <code>providedIn: 'any'</code> creates a unique instance per lazy-loaded module.</li>
+            <li><strong>Resolution Modifiers:</strong> 
+                <ul>
+                    <li><code>@Optional()</code>: Prevents errors if a service isn't found.</li>
+                    <li><code>@Self()</code>: Restricts lookup to the element's own injector.</li>
+                    <li><code>@SkipSelf()</code>: Bypasses the local injector, checking parents.</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Signals & Reactivity (Angular 16+)</h2>
+        <ul>
+            <li><strong>Signals:</strong> Provide fine-grained, synchronous reactivity. Replaces many RxJS use cases and fixes the "Diamond Problem" (glitch-free state evaluation).</li>
+            <li><strong>Core APIs:</strong> <code>signal()</code> for writable state, <code>computed()</code> for derived read-only state, <code>effect()</code> for tracking side-effects.</li>
+            <li><strong><code>model()</code> API:</strong> Replaces standard <code>@Input</code>/<code>@Output</code> pairs for seamless, signal-driven two-way data binding.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Change Detection & Performance</h2>
+        <ul>
+            <li><strong>OnPush Strategy:</strong> (<code>ChangeDetectionStrategy.OnPush</code>) Skips component checks unless an <code>@Input</code> reference changes, an event is triggered locally, or an AsyncPipe emits.</li>
+            <li><strong>NgZone & Zoneless:</strong> Angular historically uses <code>zone.js</code> to monkey-patch async browser events. Use <code>runOutsideAngular()</code> to execute heavy 3rd-party scripts without triggering change detection. Angular 18+ is moving toward fully Zoneless applications relying strictly on Signals.</li>
+            <li><strong>SSR & Hydration:</strong> Server-Side Rendering provides static HTML for fast Largest Contentful Paint (LCP). <em>Incremental Hydration</em> makes blocks interactive asynchronously.</li>
+            <li><strong>TrackBy / <code>@for track</code>:</strong> Essential for avoiding full DOM re-renders when rendering lists.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Component Communication & Forms</h2>
+        <ul>
+            <li><strong>Parent/Child:</strong> <code>@Input()</code> pushes data down; <code>@Output()</code> emits events up.</li>
+            <li><strong>ControlValueAccessor (CVA):</strong> The standard interface required to build custom form components that integrate seamlessly with Angular's Reactive Forms API (perfect for complex, dynamic UIs).</li>
+            <li><strong>Reactive Forms:</strong> Logic-driven, scalable forms using <code>FormGroup</code> and <code>FormControl</code>. Supports Synchronous and Asynchronous validators (e.g., checking backend databases for username uniqueness).</li>
+        </ul>
+    </div>
+    
+    <div class="section">
+        <h2>Template Queries & DOM</h2>
+        <ul>
+            <li><strong>@ViewChild:</strong> Direct access to a child component instance or raw DOM element via <code>ElementRef</code>.</li>
+            <li><strong>@ViewChildren:</strong> Returns a dynamically updating <code>QueryList</code>.</li>
+            <li><strong>The "ng" Quartet:</strong> 
+                <ul>
+                    <li><code>&lt;ng-template&gt;</code>: Unrendered blueprint.</li>
+                    <li><code>&lt;ng-container&gt;</code>: Ghost wrapper (zero DOM footprint).</li>
+                    <li><code>&lt;ng-content&gt;</code>: Content projection portal.</li>
+                    <li><code>*ngTemplateOutlet</code>: Dynamic renderer.</li>
+                </ul>
+            </li>
+            <li><code>*ngComponentOutlet</code>: Programmatically instantiates dynamic components at runtime.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Routing, Guards & Deferrable Views</h2>
+        <ul>
+            <li><strong>Module-Free Routing:</strong> <code>loadComponent</code> loads standalone components; <code>loadChildren</code> points to route arrays, bypassing wrapper modules.</li>
+            <li><strong>Functional Guards:</strong> <code>CanActivateFn</code> replaces class-based guards for concise route protection (e.g., checking JWT token claims before accessing a route).</li>
+            <li><strong>Wildcard Route (<code>**</code>):</strong> Must be the absolute last route defined.</li>
+            <li><strong>Deferrable Views (<code>@defer</code>):</strong> Template-level lazy loading.
+                <ul>
+                    <li><code>@placeholder</code>: Eager initial UI.</li>
+                    <li><code>@loading</code>: Shows during chunk download.</li>
+                    <li><code>@defer</code>: Core block (Triggers: idle, interaction, viewport).</li>
+                    <li><em>Anti-pattern:</em> Avoid nesting defer blocks to prevent cascading load delays.</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Advanced RxJS & API Integration</h2>
+        <ul>
+            <li><strong>Higher-Order Observables:</strong>
+                <ul>
+                    <li><code>switchMap</code>: Cancels previous requests (Live Search).</li>
+                    <li><code>mergeMap</code>: Runs all in parallel (Analytics/Logging).</li>
+                    <li><code>concatMap</code>: Queues sequentially (Ordered Saves).</li>
+                    <li><code>exhaustMap</code>: Ignores new requests until the current finishes (Login Buttons).</li>
+                </ul>
+            </li>
+            <li><strong>Memory Management:</strong> Prevent leaks using <code>takeUntilDestroyed()</code> (injecting <code>DestroyRef</code>) or delegating subscription entirely to the <code>AsyncPipe</code> in the template.</li>
+            <li><strong>Functional Interceptors:</strong> Act as middleware checkpoints (e.g., dynamically injecting Bearer JWTs into headers). Registered via <code>provideHttpClient(withInterceptors([...]))</code>.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>State Management (NgRx)</h2>
+        <ul>
+            <li><strong>Actions:</strong> Describe specific events triggered by the UI.</li>
+            <li><strong>Reducers:</strong> Pure functions that use the spread operator (<code>...state</code>) to mutate data safely, returning a new immutable state tree.</li>
+            <li><strong>Selectors:</strong> Read-only, memoized lenses that slice specific state for components.</li>
+            <li><strong>Effects:</strong> RxJS streams handling asynchronous side-effects (e.g., Web API HTTP calls).</li>
+        </ul>
+    </div>
+    
+    <div class="section">
+        <h2>TypeScript for Full-Stack Ecosystems</h2>
+        <ul>
+            <li><strong>Safe Navigation:</strong> Optional Chaining (<code>?.</code>) and Nullish Coalescing (<code>??</code>).</li>
+            <li><strong>Utility Types:</strong> <code>Pick&lt;Type, Keys&gt;</code> and <code>Omit&lt;Type, Keys&gt;</code> are highly effective for mapping backend C# DTOs to strict frontend representations.</li>
+            <li><strong>Type Assertions:</strong> Use <code>as Type</code> to override compiler assumptions.</li>
+            <li><strong>Generics:</strong> <code>&lt;T&gt;</code> ensures reusable, type-safe API service methods.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>⚡ Async Reactivity: Resource API (Angular 19–20)</h2>
+        <ul>
+            <li><strong><code>resource()</code>:</strong> Bridges signals to async data. Re-runs a loader when its params signal changes; exposes <code>value()</code>, <code>status()</code>, <code>error()</code>, and <code>isLoading()</code> as signals.</li>
+            <li><strong><code>rxResource()</code>:</strong> Same pattern, but the loader returns an <em>Observable</em> (stream) — enables resource streaming. Import from <code>@angular/core/rxjs-interop</code>.</li>
+            <li><strong><code>httpResource()</code>:</strong> Reactive wrapper around <code>HttpClient</code>; returns request status + response as signals. Supports interceptors. (Experimental in v20.)</li>
+            <li><strong>Key win:</strong> Built-in loading/error states + automatic request cancellation — replaces manual <code>switchMap</code> + subscription boilerplate for data fetching.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🎯 Signal-Based Inputs &amp; Queries</h2>
+        <ul>
+            <li><strong><code>input()</code> / <code>input.required()</code>:</strong> Signal inputs; read as <code>myInput()</code>. Support transform, aliases, and are read-only in the child.</li>
+            <li><strong><code>output()</code>:</strong> Function-based replacement for <code>@Output()</code> <code>EventEmitter</code>.</li>
+            <li><strong><code>viewChild()</code> / <code>viewChildren()</code> / <code>contentChild()</code> / <code>contentChildren()</code>:</strong> Signal query functions; the <code>.required</code> variant guarantees a match. Available reactively before <code>ngAfterViewInit</code>.</li>
+            <li><strong><code>linkedSignal()</code>:</strong> Writable signal derived from other signals that resets when its source changes (e.g., a selected item that clears on list reload).</li>
+            <li><strong>Migration:</strong> Official <code>ng generate @angular/core:signal-queries</code> / VSCode refactor exists.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🧩 Directive Composition &amp; Custom Directives</h2>
+        <ul>
+            <li><strong><code>hostDirectives</code>:</strong> Reuse behavior by attaching directives to a component's host without inheritance; host directives run their hooks <em>before</em> the host component.</li>
+            <li><strong>3 Directive Types:</strong>
+                <ul>
+                    <li><strong>Component:</strong> Has a template.</li>
+                    <li><strong>Attribute (<code>[appX]</code>):</strong> Changes behavior/look.</li>
+                    <li><strong>Structural (<code>*</code>):</strong> Reshapes the DOM.</li>
+                </ul>
+            </li>
+            <li><strong><code>host</code> metadata:</strong> Modern way to bind host properties/listeners (preferred over <code>@HostBinding</code>/<code>@HostListener</code>).</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔀 Built-in Control Flow (Angular 17+)</h2>
+        <ul>
+            <li><strong>Blocks:</strong> <code>@if</code> / <code>@else if</code> / <code>@else</code>, <code>@for (item of items; track item.id)</code> (⚠️ <code>track</code> is mandatory), <code>@switch</code> / <code>@case</code> / <code>@default</code>.</li>
+            <li><strong><code>@let</code>:</strong> Declare template-local variables (Angular 18.1+).</li>
+            <li><strong>Why:</strong> Faster, no <code>*ngIf</code>/<code>*ngFor</code> imports needed, up to ~90% faster runtime for list updates. The <code>@empty</code> block handles empty collections.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🖥️ SSR, Hydration &amp; Rendering Modes</h2>
+        <ul>
+            <li><strong>Non-destructive Hydration:</strong> Reuses server DOM instead of re-rendering; enable via <code>provideClientHydration()</code>.</li>
+            <li><strong>Incremental Hydration:</strong> <code>@defer (hydrate on ...)</code> hydrates blocks lazily. (Angular 19+)</li>
+            <li><strong>Event Replay:</strong> <code>withEventReplay()</code> captures user events during hydration and replays them once interactive.</li>
+            <li><strong>Hybrid Rendering:</strong> Per-route <code>RenderMode</code> (Server / Client / Prerender) via <code>provideServerRendering</code> + route config.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🧪 Testing Essentials</h2>
+        <ul>
+            <li><strong>Setup:</strong> <code>TestBed.configureTestingModule</code> + <code>ComponentFixture</code>; <code>fixture.detectChanges()</code> triggers change detection.</li>
+            <li><strong>Async:</strong> <code>fakeAsync</code> + <code>tick()</code> for timers; <code>flush()</code> drains the macrotask queue.</li>
+            <li><strong>HTTP:</strong> <code>provideHttpClientTesting()</code> + <code>HttpTestingController</code> to mock/<code>expectOne</code>/<code>flush</code> requests.</li>
+            <li><strong>Harnesses:</strong> Angular CDK Component Harnesses for robust, implementation-agnostic component tests.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔐 Security &amp; Best Practices</h2>
+        <ul>
+            <li><strong>Built-in XSS Protection:</strong> Angular auto-sanitizes interpolation &amp; bindings by context.</li>
+            <li><strong><code>DomSanitizer</code> + <code>bypassSecurityTrust...()</code>:</strong> Use <em>only</em> with fully trusted content.</li>
+            <li><strong>Trusted Types:</strong> CSP-level defense against DOM XSS.</li>
+            <li><strong>Rule of thumb:</strong> Avoid <code>innerHTML</code> with untrusted data; never concatenate user input into templates.</li>
+        </ul>
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Senior AWS Developer Interview Study Guide (AWS + AI)</title>
+  <style>
+    :root { --fg:#111; --muted:#555; --accent:#0b5fff; --bg:#fff; --codebg:#f6f8fa; --border:#ddd; }
+    body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; color:var(--fg); background:var(--bg); margin:0; }
+    header { padding:28px 34px; border-bottom:1px solid var(--border); }
+    h1 { margin:0 0 8px 0; font-size:28px; color:blue; }
+    .subtitle { color:var(--muted); margin:0; line-height:1.35; }
+    main { padding:22px 34px 60px; max-width: 1100px; }
+    h2 { margin-top:28px; padding-top:10px; border-top:1px solid var(--border); color:blue; }
+    h3 { margin-top:18px; color:blue; }
+    h4 { margin-top:14px; color:blue; }
+    p, li { line-height:1.45; }
+    code, pre { font-family: "Cascadia Code","Cascadia Mono",ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; }
+    /* Inline code keeps the light look */
+    p code, li code, h1 code, h2 code, h3 code, h4 code {
+      background:var(--codebg); color:#0b216f; padding:1px 5px; border-radius:4px; font-size:0.92em;
+    }
+    /* Code blocks styled to match the Visual Studio Code editor (Dark+ theme) */
+    pre {
+      background:#1e1e1e; color:#d4d4d4; padding:14px 16px; overflow:auto; border-radius:8px;
+      border:1px solid #333; font-size:13.5px; line-height:1.5;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    }
+    pre code { background:transparent; color:inherit; padding:0; border:0; font-size:inherit; }
+    /* AWS CLI snippets styled like the classic Windows CMD console terminal */
+    pre.cmd {
+      background:#000000; color:#c0c0c0; border:1px solid #808080;
+      font-family: "Consolas","Lucida Console","Courier New",monospace;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      border-radius:4px; padding:0; overflow:hidden;
+    }
+    pre.cmd::before {
+      content:"Command Prompt";
+      display:block; background:#c0c0c0; color:#000;
+      font-family:"Segoe UI",Tahoma,sans-serif; font-size:12px;
+      padding:3px 8px; border-bottom:1px solid #808080;
+    }
+    pre.cmd code {
+      display:block; padding:12px 14px; color:#c0c0c0; overflow:auto;
+    }
+    .callout { border-left: 4px solid var(--accent); background:#f3f7ff; padding:10px 12px; border-radius:8px; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+    .box { border:1px solid var(--border); border-radius:10px; padding:12px; }
+    .muted { color:var(--muted); }
+    .toc a { color:var(--accent); text-decoration:none; }
+    .toc a:hover { text-decoration:underline; }
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      a { color: inherit; text-decoration: none; }
+      header { page-break-after: avoid; }
+      pre { white-space: pre-wrap; word-break: break-word; page-break-inside: avoid; }
+      pre.cmd { background:#000000 !important; }
+      pre.cmd code, pre code { color:inherit; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Senior AWS Developer Technical Interview — Study Material (AWS + AI)</h1>
+  <p class="subtitle">
+    Focus: architecture, security, serverless, containers, data, networking, IaC, CI/CD, observability, cost, reliability,
+    and GenAI integration on AWS. Includes Python + AWS CLI and C#/.NET + AWS CLI snippets.
+  </p>
+</header>
+
+<main>
+  <section class="toc">
+    <h2>Table of Contents</h2>
+    <ol>
+      <li><a href="#how-to-use">How to use this guide</a></li>
+      <li><a href="#core-interview">Core senior interview expectations</a></li>
+      <li><a href="#iam-security">IAM & Security Engineering</a></li>
+      <li><a href="#networking">Networking (VPC) & Edge</a></li>
+      <li><a href="#compute">Compute: EC2, ASG, Lambda</a></li>
+      <li><a href="#serverless">Serverless & Event-driven Systems</a></li>
+      <li><a href="#containers">Containers: ECS, EKS, Fargate</a></li>
+      <li><a href="#storage">Storage: S3, EBS, EFS, FSx</a></li>
+      <li><a href="#databases">Databases & Caching</a></li>
+      <li><a href="#integration">Integration: SQS, SNS, EventBridge, API Gateway</a></li>
+      <li><a href="#observability">Observability: CloudWatch, X-Ray, OpenTelemetry</a></li>
+      <li><a href="#iac">Infrastructure as Code: CloudFormation/CDK/Terraform</a></li>
+      <li><a href="#cicd">CI/CD & Release Engineering</a></li>
+      <li><a href="#reliability">Reliability, DR, Multi-Region</a></li>
+      <li><a href="#performance-cost">Performance & Cost Optimization</a></li>
+      <li><a href="#ai">AI/GenAI on AWS: Bedrock, SageMaker, AI patterns</a></li>
+      <li><a href="#system-design">System Design prompts & answer frameworks</a></li>
+      <li><a href="#practice">Hands-on labs checklist</a></li>
+      <li><a href="#question-bank">Senior-level question bank</a></li>
+      <li><a href="#cheatsheets">CLI/Snippet cheat sheets (Python + .NET)</a></li>
+    </ol>
+  </section>
+
+  <section id="how-to-use">
+    <h2>1) How to use this guide</h2>
+    <div class="callout">
+      <strong>Suggested plan (2–4 weeks):</strong>
+      <ol>
+        <li><strong>Week 1:</strong> IAM/security, VPC/networking fundamentals, S3 + KMS, Lambda basics.</li>
+        <li><strong>Week 2:</strong> event-driven (SQS/SNS/EventBridge), API Gateway, DynamoDB, RDS basics, observability.</li>
+        <li><strong>Week 3:</strong> containers (ECS/EKS), CI/CD + IaC, reliability/DR patterns.</li>
+        <li><strong>Week 4:</strong> AI/GenAI integration (Bedrock + RAG + Guardrails), system design drills, mock interviews.</li>
+      </ol>
+    </div>
+    <p>
+      As a Senior AWS Developer, interviewers expect you to:
+      <ul>
+        <li>Translate business requirements into AWS designs with <strong>security, cost, and operational excellence</strong>.</li>
+        <li>Demonstrate strong <strong>failure-mode thinking</strong> (timeouts, retries, idempotency, backpressure).</li>
+        <li>Ship software with <strong>repeatable delivery</strong> (IaC, CI/CD, testing, observability).</li>
+        <li>Handle <strong>data + events</strong> correctly (ordering, duplication, schema evolution).</li>
+        <li>Integrate <strong>AI safely</strong> (privacy, guardrails, PII redaction, prompt-injection mitigations).</li>
+      </ul>
+    </p>
+  </section>
+
+  <section id="core-interview">
+    <h2>2) Core senior interview expectations</h2>
+    <div class="grid">
+      <div class="box">
+        <h3>Signals of seniority</h3>
+        <ul>
+          <li>Principle of least privilege IAM; separation of duties; account strategy.</li>
+          <li>Designing for retries, DLQs, idempotency, rate limits, and partial failures.</li>
+          <li>Good defaults: encryption everywhere, private networking, logging, alarms, dashboards.</li>
+          <li>Can explain tradeoffs with numbers (RTO/RPO, p99 latency, throughput, cost drivers).</li>
+          <li>Understands AWS service limits and mitigations (quotas, partitioning, sharding).</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h3>Common failure points</h3>
+        <ul>
+          <li>Over-trusting “at-least-once” delivery (SQS/Lambda) → duplicate processing bugs.</li>
+          <li>No backpressure controls → cascading failures and retry storms.</li>
+          <li>Hard-coded config/secrets; no rotation; improper KMS key policies.</li>
+          <li>Poor network design (no endpoints, open SGs, NAT cost surprises).</li>
+          <li>Observability gaps (no correlation IDs, missing traces, no SLOs).</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Senior answer format (use in interviews)</h3>
+    <ol>
+      <li><strong>Clarify requirements</strong>: SLA/SLO, traffic, data sensitivity, compliance, latency, regions.</li>
+      <li><strong>Propose a baseline architecture</strong> (AWS services) + explain why.</li>
+      <li><strong>Call out failure modes</strong>: retries, DLQs, circuit breakers, timeouts, quotas.</li>
+      <li><strong>Security</strong>: IAM, encryption, network isolation, logging/auditing.</li>
+      <li><strong>Operations</strong>: monitoring, alerts, runbooks, deployment strategy, rollback.</li>
+      <li><strong>Cost</strong>: main cost drivers and levers.</li>
+    </ol>
+  </section>
+
+  <section id="iam-security">
+    <h2>3) IAM & Security Engineering</h2>
+
+    <h3>IAM fundamentals you must nail</h3>
+    <ul>
+      <li><strong>Policy evaluation logic</strong>: explicit deny &#62; allow; SCPs and permissions boundaries can limit effective permissions.</li>
+      <li><strong>Roles vs Users</strong>: prefer roles + short-lived credentials (STS). Avoid long-lived keys.</li>
+      <li><strong>Trust policy vs permission policy</strong>: trust = who can assume; permission = what they can do.</li>
+      <li><strong>Resource policies</strong> (S3, KMS, SNS, SQS, API Gateway, Lambda) vs identity policies.</li>
+      <li><strong>ABAC</strong>: using tags + conditions to scale access controls.</li>
+    </ul>
+
+    <h3>Org-level controls</h3>
+    <ul>
+      <li><strong>AWS Organizations + SCPs</strong>: enforce guardrails (deny creating internet gateways, deny disabling CloudTrail, etc.).</li>
+      <li><strong>Centralized logging</strong>: org trail + centralized S3 bucket, CloudWatch log aggregation, security account pattern.</li>
+      <li><strong>IAM Access Analyzer</strong>: find public/resource-sharing exposures.</li>
+    </ul>
+
+    <h3>Encryption & KMS</h3>
+    <ul>
+      <li><strong>Envelope encryption</strong>: data key per object/record; master key in KMS.</li>
+      <li><strong>KMS key policy</strong> is authoritative; IAM policy alone doesn’t grant if key policy denies.</li>
+      <li>Understand <strong>grant</strong> usage for AWS services (e.g., EBS, S3 SSE-KMS).</li>
+      <li>Rotation strategy: enable key rotation (where applicable), plan re-encryption for long-lived data.</li>
+    </ul>
+
+    <h3>Secrets</h3>
+    <ul>
+      <li><strong>Secrets Manager</strong> for rotation; <strong>SSM Parameter Store</strong> for config (secure strings if needed).</li>
+      <li>Don’t log secrets; ensure redaction in app logs.</li>
+      <li>Prefer IAM auth (RDS IAM auth, Cognito/OIDC, SigV4) over static secrets when possible.</li>
+    </ul>
+
+    <h3>Security logging</h3>
+    <ul>
+      <li><strong>CloudTrail</strong> (management + data events where necessary).</li>
+      <li><strong>VPC Flow Logs</strong>, ALB/NLB logs, S3 access logs (or CloudTrail data events).</li>
+      <li><strong>GuardDuty</strong>, Security Hub, Detective (know what they are used for).</li>
+    </ul>
+
+    <h3>Interview-ready examples</h3>
+
+    <h4>AWS CLI: create a least-privileged role for Lambda</h4>
+    <pre class="cmd"><code class="nohighlight"># Trust policy (lambda can assume role)
+cat &#62; trust.json &#60;&#60; 'EOF'
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    { "Effect": "Allow", "Principal": { "Service": "lambda.amazonaws.com" }, "Action": "sts:AssumeRole" }
+  ]
+}
+EOF
+
+aws iam create-role --role-name MyLambdaRole --assume-role-policy-document file://trust.json
+
+# Attach AWS managed basic execution (logs). In real cases, prefer custom policies as well.
+aws iam attach-role-policy --role-name MyLambdaRole --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+</code></pre>
+
+    <h4>Python: assume-role via STS (cross-account)</h4>
+    <pre><code class="language-python">import boto3
+
+sts = boto3.client("sts")
+resp = sts.assume_role(
+    RoleArn="arn:aws:iam::123456789012:role/CrossAccountReadRole",
+    RoleSessionName="interview-demo",
+    DurationSeconds=3600
+)
+
+creds = resp["Credentials"]
+s3 = boto3.client(
+    "s3",
+    aws_access_key_id=creds["AccessKeyId"],
+    aws_secret_access_key=creds["SecretAccessKey"],
+    aws_session_token=creds["SessionToken"],
+)
+
+print(s3.list_buckets())
+</code></pre>
+
+    <h4>C#/.NET: assume-role via STS (AWS SDK)</h4>
+    <pre><code class="language-csharp">using Amazon.SecurityToken;
+using Amazon.SecurityToken.Model;
+using Amazon.S3;
+
+var sts = new AmazonSecurityTokenServiceClient();
+var assume = await sts.AssumeRoleAsync(new AssumeRoleRequest
+{
+    RoleArn = "arn:aws:iam::123456789012:role/CrossAccountReadRole",
+    RoleSessionName = "interview-demo",
+    DurationSeconds = 3600
+});
+
+var creds = assume.Credentials;
+var s3 = new AmazonS3Client(
+    creds.AccessKeyId,
+    creds.SecretAccessKey,
+    creds.SessionToken,
+    Amazon.RegionEndpoint.USEast1
+);
+
+var buckets = await s3.ListBucketsAsync();
+Console.WriteLine($"Buckets: {buckets.Buckets.Count}");
+</code></pre>
+  </section>
+
+  <section id="networking">
+    <h2>4) Networking (VPC) & Edge</h2>
+
+    <h3>VPC essentials</h3>
+    <ul>
+      <li><strong>Subnets</strong>: public vs private is about routing (IGW route).</li>
+      <li><strong>Route tables</strong>, <strong>IGW</strong>, <strong>NAT Gateway</strong> (cost + AZ scope), <strong>egress-only IGW</strong> (IPv6).</li>
+      <li><strong>Security Groups</strong> (stateful) vs <strong>NACLs</strong> (stateless).</li>
+      <li><strong>VPC Endpoints</strong>: Interface (PrivateLink) vs Gateway (S3/DynamoDB). Big impact on security and NAT costs.</li>
+      <li><strong>DNS</strong>: Route 53, private hosted zones, resolver endpoints for hybrid.</li>
+    </ul>
+
+    <h3>Load balancing & TLS</h3>
+    <ul>
+      <li><strong>ALB</strong>: L7 HTTP/HTTPS, path-based routing, WAF integration, auth.</li>
+      <li><strong>NLB</strong>: L4 TCP/UDP, static IP, high performance; TLS termination possible.</li>
+      <li><strong>ACM</strong> certs; mTLS patterns when needed; consider AWS Private CA for internal.</li>
+    </ul>
+
+    <h3>Edge & protection</h3>
+    <ul>
+      <li><strong>CloudFront</strong> for caching/edge; origin access control for S3 origins.</li>
+      <li><strong>AWS WAF</strong> for L7 filtering; rate-based rules; managed rule groups.</li>
+      <li><strong>AWS Shield</strong> (Standard/Advanced) for DDoS protection.</li>
+    </ul>
+
+    <h4>CLI: create VPC endpoint for S3 (Gateway endpoint)</h4>
+    <pre class="cmd"><code class="nohighlight">aws ec2 create-vpc-endpoint \
+  --vpc-id vpc-1234567890abcdef0 \
+  --service-name com.amazonaws.us-east-1.s3 \
+  --vpc-endpoint-type Gateway \
+  --route-table-ids rtb-aaaabbbbccccdddd</code></pre>
+
+    <h3>Senior interview networking prompts</h3>
+    <ul>
+      <li>How do you keep Lambdas private while accessing S3/DynamoDB/Secrets Manager?</li>
+      <li>How would you design multi-AZ ingress and egress? Where does NAT cost appear?</li>
+      <li>How do you do zero-trust between microservices (mTLS, IAM auth, private endpoints)?</li>
+    </ul>
+  </section>
+
+  <section id="compute">
+    <h2>5) Compute: EC2, Auto Scaling, Lambda</h2>
+
+    <h3>EC2 + ASG</h3>
+    <ul>
+      <li><strong>Launch Templates</strong>, Mixed Instances, Spot + On-Demand blending.</li>
+      <li>Lifecycle hooks for bootstrap/drain; instance refresh for rolling updates.</li>
+      <li>Placement groups for low-latency clusters when needed.</li>
+    </ul>
+
+    <h3>Lambda (advanced)</h3>
+    <ul>
+      <li><strong>Concurrency</strong>: reserved, provisioned; understand throttling.</li>
+      <li><strong>Cold starts</strong>: mitigations (provisioned concurrency, smaller packages, avoid VPC where unnecessary).</li>
+      <li><strong>Timeouts</strong>: align Lambda timeout with upstream timeouts; prevent retries from exceeding idempotency window.</li>
+      <li><strong>Retries</strong>: async invocations retry; event source mapping retry semantics differ (SQS vs DynamoDB streams vs Kinesis).</li>
+      <li><strong>Destinations</strong> (success/failure) and DLQs (SQS/SNS).</li>
+    </ul>
+
+    <h4>Python: Lambda idempotency (simple DynamoDB-based pattern)</h4>
+    <pre><code class="language-python">import os, time, json
+import boto3
+from botocore.exceptions import ClientError
+
+ddb = boto3.client("dynamodb")
+TABLE = os.environ["IDEMPOTENCY_TABLE"]
+
+def handler(event, context):
+    # Use a stable request key (messageId, orderId, etc.)
+    key = event.get("idempotencyKey") or event["Records"][0]["messageId"]
+
+    ttl = int(time.time()) + 3600
+    try:
+        ddb.put_item(
+            TableName=TABLE,
+            Item={"pk": {"S": key}, "expiresAt": {"N": str(ttl)}},
+            ConditionExpression="attribute_not_exists(pk)"
+        )
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            return {"statusCode": 200, "body": "Duplicate ignored"}
+        raise
+
+    # Do the real work
+    return {"statusCode": 200, "body": json.dumps({"ok": True})}
+</code></pre>
+
+    <h4>C#/.NET: Lambda handler skeleton (good defaults)</h4>
+    <pre><code class="language-csharp">using Amazon.Lambda.Core;
+using System.Text.Json;
+
+[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
+
+public class Function
+{
+    public async Task&#60;object&#62; FunctionHandler(object input, ILambdaContext context)
+    {
+        context.Logger.LogLine($"requestId={context.AwsRequestId} input={JsonSerializer.Serialize(input)}");
+        // Add correlationId propagation and structured logging in real apps.
+        await Task.CompletedTask;
+        return new { ok = true };
+    }
+}</code></pre>
+  </section>
+
+  <section id="serverless">
+    <h2>6) Serverless & Event-driven Systems</h2>
+
+    <h3>Core concepts</h3>
+    <ul>
+      <li><strong>At-least-once delivery</strong> is the default: duplicates happen. Make consumers idempotent.</li>
+      <li><strong>Ordering</strong>: SQS Standard is best-effort order; FIFO provides ordering within message group.</li>
+      <li><strong>Backpressure</strong>: control concurrency (Lambda reserved concurrency; SQS batch size; EventBridge retry policies).</li>
+      <li><strong>Schema evolution</strong>: version your events; avoid breaking changes; consider schema registry patterns.</li>
+    </ul>
+
+    <h3>SQS deep dive</h3>
+    <ul>
+      <li>Visibility timeout must exceed max processing time; extend visibility if needed.</li>
+      <li>DLQ redrive: choose maxReceiveCount; capture failure reasons.</li>
+      <li>FIFO: deduplication window and message group scaling constraints (design message groups carefully).</li>
+    </ul>
+
+    <h4>CLI: Create SQS queue + DLQ and redrive policy</h4>
+    <pre class="cmd"><code class="nohighlight"># Create DLQ
+DLQ_URL=$(aws sqs create-queue --queue-name orders-dlq --query 'QueueUrl' --output text)
+DLQ_ARN=$(aws sqs get-queue-attributes --queue-url "$DLQ_URL" --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
+
+# Create main queue with redrive policy
+aws sqs create-queue --queue-name orders-queue \
+  --attributes "RedrivePolicy={\"deadLetterTargetArn\":\"$DLQ_ARN\",\"maxReceiveCount\":\"5\"}"</code></pre>
+
+    <h3>EventBridge</h3>
+    <ul>
+      <li>Event routing with rules (pattern matching); decouple producers/consumers.</li>
+      <li>Retries + DLQ for targets; archive/replay (if enabled) for recovery/testing patterns.</li>
+      <li>Great for <strong>domain events</strong> and integrating SaaS/AWS services.</li>
+    </ul>
+
+    <h3>Step Functions</h3>
+    <ul>
+      <li><strong>Standard</strong> vs <strong>Express</strong>: Standard for long-running/durable workflows; Express for high-throughput short workflows.</li>
+      <li>Use retries with exponential backoff + jitter, catch blocks, compensation (saga).</li>
+      <li>Human-in-the-loop patterns via callbacks/task tokens when required.</li>
+    </ul>
+
+    <h4>Design pattern: Saga (orchestration)</h4>
+    <p class="muted">
+      Example: order creation → payment → inventory → shipping with compensation when later steps fail.
+      Step Functions coordinates; each microservice is independently deployable.
+    </p>
+  </section>
+
+  <section id="containers">
+    <h2>7) Containers: ECS, EKS, Fargate</h2>
+
+    <h3>ECS (Fargate) vs EKS</h3>
+    <div class="grid">
+      <div class="box">
+        <h4>ECS/Fargate</h4>
+        <ul>
+          <li>Lower operational overhead; strong AWS integration.</li>
+          <li>Great for most microservices and batch-like workloads.</li>
+          <li>Use Service Auto Scaling + ALB/NLB; IAM task roles.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h4>EKS (Kubernetes)</h4>
+        <ul>
+          <li>More flexibility/ecosystem; more ops complexity.</li>
+          <li>Requires strong cluster hygiene: upgrades, CNI, autoscaling, policies.</li>
+          <li>Use IRSA (IAM Roles for Service Accounts) for least privilege.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Container security</h3>
+    <ul>
+      <li>Image scanning (ECR scanning + CI scanning).</li>
+      <li>Runtime permissions: task role/IRSA; drop linux capabilities; read-only fs where possible.</li>
+      <li>Secrets injection: Secrets Manager/SSM; avoid baking into images.</li>
+    </ul>
+
+    <h4>AWS CLI: push image to ECR (outline)</h4>
+    <pre class="cmd"><code class="nohighlight">aws ecr create-repository --repository-name myapp
+
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin &#60;accountId&#62;.dkr.ecr.us-east-1.amazonaws.com
+
+docker build -t myapp:1 .
+docker tag myapp:1 &#60;accountId&#62;.dkr.ecr.us-east-1.amazonaws.com/myapp:1
+docker push &#60;accountId&#62;.dkr.ecr.us-east-1.amazonaws.com/myapp:1</code></pre>
+  </section>
+
+  <section id="storage">
+    <h2>8) Storage: S3, EBS, EFS, FSx</h2>
+
+    <h3>S3 (must-know)</h3>
+    <ul>
+      <li><strong>Consistency</strong>: strong read-after-write consistency for PUT/DELETE (modern S3 behavior).</li>
+      <li><strong>Security</strong>: Block Public Access, bucket policies, OAC with CloudFront, access points.</li>
+      <li><strong>Encryption</strong>: SSE-S3 vs SSE-KMS; KMS policies and cost implications.</li>
+      <li><strong>Lifecycle</strong>: transition to IA/Glacier; expiration; storage class analysis.</li>
+      <li><strong>Events</strong>: S3 notifications to SQS/SNS/Lambda; beware of recursion loops.</li>
+    </ul>
+
+    <h4>CLI: enable default SSE-KMS on a bucket</h4>
+    <pre class="cmd"><code class="nohighlight">aws s3api put-bucket-encryption --bucket my-bucket --server-side-encryption-configuration '{
+  "Rules": [{
+    "ApplyServerSideEncryptionByDefault": {
+      "SSEAlgorithm": "aws:kms",
+      "KMSMasterKeyID": "alias/my-key"
+    }
+  }]
+}'</code></pre>
+
+    <h3>EBS/EFS/FSx quick guidance</h3>
+    <ul>
+      <li><strong>EBS</strong>: block storage; snapshots; gp3 vs io2 tradeoffs; encryption by default.</li>
+      <li><strong>EFS</strong>: shared NFS; great for shared workloads; performance modes; mount targets per AZ.</li>
+      <li><strong>FSx</strong>: specialized (Windows, Lustre, NetApp ONTAP) when you need those semantics.</li>
+    </ul>
+  </section>
+
+  <section id="databases">
+    <h2>9) Databases & Caching</h2>
+
+    <h3>DynamoDB</h3>
+    <ul>
+      <li>Partition key design drives scalability; avoid hot partitions.</li>
+      <li>LSI/GSIs: understand access patterns; projection; write costs.</li>
+      <li>Conditional writes for idempotency; transactions where needed (cost/latency tradeoffs).</li>
+      <li>DynamoDB Streams + Lambda for CDC/eventing patterns.</li>
+    </ul>
+
+    <h4>Python: conditional write (optimistic locking-ish)</h4>
+    <pre><code class="language-python">import boto3
+ddb = boto3.client("dynamodb")
+
+ddb.update_item(
+    TableName="Orders",
+    Key={"pk": {"S": "order#123"}, "sk": {"S": "meta"}},
+    UpdateExpression="SET #s = :new, version = version + :one",
+    ConditionExpression="version = :expected",
+    ExpressionAttributeNames={"#s": "status"},
+    ExpressionAttributeValues={
+        ":new": {"S": "PAID"},
+        ":expected": {"N": "3"},
+        ":one": {"N": "1"}
+    }
+)</code></pre>
+
+    <h3>RDS / Aurora</h3>
+    <ul>
+      <li>Connection management: poolers, RDS Proxy for Lambda, max connections planning.</li>
+      <li>Backups + PITR, read replicas, Multi-AZ (HA) vs read scaling (replicas).</li>
+      <li>Aurora: reader endpoint, failover behavior; understand quorum storage conceptually.</li>
+    </ul>
+
+    <h3>ElastiCache (Redis/Memcached)</h3>
+    <ul>
+      <li>Cache-aside vs write-through; TTLs; stampede protection.</li>
+      <li>Redis for rate limiting, sessions, pub/sub (careful), distributed locks (careful).</li>
+    </ul>
+
+    <h3>OpenSearch</h3>
+    <ul>
+      <li>Use for search/analytics; index design, shard sizing, ingestion pipelines.</li>
+      <li>Security: fine-grained access control, VPC deployment.</li>
+    </ul>
+  </section>
+
+  <section id="integration">
+    <h2>10) Integration: API Gateway, SNS, SQS, EventBridge</h2>
+
+    <h3>API Gateway</h3>
+    <ul>
+      <li>REST vs HTTP APIs; tradeoff: features vs cost/latency.</li>
+      <li>Auth: IAM (SigV4), Cognito JWT authorizers, Lambda authorizers.</li>
+      <li>Throttling, request validation, mapping, caching (where applicable).</li>
+    </ul>
+
+    <h4>CLI: create a basic HTTP API (outline)</h4>
+    <pre class="cmd"><code class="nohighlight"># Typically done via IaC; CLI shown for familiarity.
+aws apigatewayv2 create-api --name my-http-api --protocol-type HTTP</code></pre>
+
+    <h3>Messaging patterns</h3>
+    <ul>
+      <li><strong>Fanout</strong>: SNS → multiple SQS queues (preferred) or Lambdas.</li>
+      <li><strong>Work queue</strong>: SQS + workers.</li>
+      <li><strong>Event bus</strong>: EventBridge for domain events and integration.</li>
+      <li>Always define <strong>DLQs</strong> and alarms on DLQ depth.</li>
+    </ul>
+  </section>
+
+  <section id="observability">
+    <h2>11) Observability: CloudWatch, X-Ray, OpenTelemetry</h2>
+
+    <h3>What “good” looks like</h3>
+    <ul>
+      <li><strong>Metrics</strong>: RED (Rate, Errors, Duration) for APIs; USE for resources (Utilization, Saturation, Errors).</li>
+      <li><strong>Logs</strong>: structured JSON logs with correlation IDs; PII redaction.</li>
+      <li><strong>Tracing</strong>: distributed trace across services; propagate trace/correlation headers.</li>
+      <li><strong>Alarms</strong>: symptom-based alarms (error rate, latency, saturation) + business KPIs.</li>
+    </ul>
+
+    <h3>CloudWatch specifics</h3>
+    <ul>
+      <li>Log groups retention policies; metric filters for critical patterns.</li>
+      <li>Dashboards per service and per customer journey.</li>
+      <li>Synthetics canaries for external checks.</li>
+    </ul>
+
+    <h4>CLI: create a log retention policy</h4>
+    <pre class="cmd"><code class="nohighlight">aws logs put-retention-policy --log-group-name "/aws/lambda/my-fn" --retention-in-days 14</code></pre>
+  </section>
+
+  <section id="iac">
+    <h2>12) Infrastructure as Code: CloudFormation / CDK / Terraform</h2>
+
+    <h3>Core IaC expectations</h3>
+    <ul>
+      <li>Repeatability: dev/stage/prod parity via parameters and environment-specific config.</li>
+      <li>Change safety: reviewable diffs, automated tests (linting, policy checks), and rollback strategy.</li>
+      <li>Secrets and sensitive data: do not store plaintext in templates; reference Secrets Manager/SSM.</li>
+    </ul>
+
+    <h3>CloudFormation</h3>
+    <ul>
+      <li>Stacks, nested stacks, StackSets for org-wide rollout.</li>
+      <li>Change sets for preview; drift detection for compliance.</li>
+    </ul>
+
+    <h3>CDK</h3>
+    <ul>
+      <li>Great for abstraction + reuse; still outputs CloudFormation (understand synthesized resources).</li>
+      <li>Guardrails: cdk-nag and IAM least privilege patterns.</li>
+    </ul>
+  </section>
+
+  <section id="cicd">
+    <h2>13) CI/CD & Release Engineering</h2>
+
+    <h3>Build pipeline basics</h3>
+    <ul>
+      <li>Build, unit tests, security scans (SAST, dependency, container), package, deploy.</li>
+      <li>Promote artifacts (immutable) across environments; avoid rebuilding for prod.</li>
+    </ul>
+
+    <h3>Deployment strategies</h3>
+    <ul>
+      <li><strong>Blue/Green</strong> (safe rollbacks), <strong>Canary</strong>, <strong>Rolling</strong>.</li>
+      <li>Lambda: aliases + weighted traffic shifting (CodeDeploy) for canary deployments.</li>
+      <li>Containers: ECS blue/green with CodeDeploy; EKS progressive delivery with Argo Rollouts (if used).</li>
+    </ul>
+
+    <h3>Policy as code</h3>
+    <ul>
+      <li>Check IAM wildcards, public S3, open SGs, missing encryption, missing retention.</li>
+      <li>Tools: OPA/Conftest, Checkov, cdk-nag, tfsec (depending on IaC choice).</li>
+    </ul>
+  </section>
+
+  <section id="reliability">
+    <h2>14) Reliability, DR, Multi-Region</h2>
+
+    <h3>Key terms</h3>
+    <ul>
+      <li><strong>RTO</strong>: time to restore service.</li>
+      <li><strong>RPO</strong>: acceptable data loss window.</li>
+      <li><strong>Multi-AZ</strong> vs <strong>Multi-Region</strong>: HA vs regional resilience.</li>
+    </ul>
+
+    <h3>Common DR strategies</h3>
+    <ul>
+      <li><strong>Backup & Restore</strong>: lowest cost, highest RTO.</li>
+      <li><strong>Pilot Light</strong>: minimal core running, scale during failover.</li>
+      <li><strong>Warm Standby</strong>: scaled-down full environment.</li>
+      <li><strong>Active/Active</strong>: highest complexity/cost, best resilience.</li>
+    </ul>
+
+    <h3>Resilient app practices</h3>
+    <ul>
+      <li>Timeouts everywhere; bounded retries; jitter; circuit breakers.</li>
+      <li>Bulkheads: isolate dependencies, queues, concurrency pools.</li>
+      <li>Graceful degradation: cached/stale reads, reduced features.</li>
+      <li>Runbooks + game days/chaos testing where feasible.</li>
+    </ul>
+  </section>
+
+  <section id="performance-cost">
+    <h2>15) Performance & Cost Optimization</h2>
+
+    <h3>Cost drivers to mention in interviews</h3>
+    <ul>
+      <li>NAT Gateway data processing + hours (often a surprise).</li>
+      <li>CloudWatch logs ingestion and retention.</li>
+      <li>S3 requests and data retrieval, especially Glacier classes.</li>
+      <li>Lambda duration + provisioned concurrency.</li>
+      <li>Data transfer across AZ/Region; CloudFront egress optimization.</li>
+      <li>RDS/Aurora sizing, IOPS, and over-provisioned replicas.</li>
+    </ul>
+
+    <h3>Performance levers</h3>
+    <ul>
+      <li>Caching: CloudFront, API caching (where applicable), Redis.</li>
+      <li>Async processing with queues; batch where safe.</li>
+      <li>Use VPC endpoints; reduce network hops.</li>
+      <li>Choose the right database for access patterns.</li>
+    </ul>
+
+    <h4>CLI: cost visibility quick start</h4>
+    <pre class="cmd"><code class="nohighlight"># Enable Cost Explorer is typically done in console. For tags:
+aws ce get-cost-and-usage --time-period Start=2026-08-01,End=2026-08-07 \
+  --granularity DAILY --metrics "UnblendedCost"</code></pre>
+  </section>
+
+  <section id="ai">
+    <h2>16) AI/GenAI on AWS: Bedrock, SageMaker, and Integration Patterns</h2>
+
+    <div class="callout">
+      <strong>Senior expectation:</strong> You must show you can integrate GenAI <em>safely</em>:
+      privacy, least privilege, auditability, prompt-injection mitigations, PII redaction, and grounding (RAG).
+    </div>
+
+    <h3>Service map</h3>
+    <ul>
+      <li><strong>Amazon Bedrock</strong>: managed foundation model (FM) access + tooling (agents, knowledge bases, guardrails).</li>
+      <li><strong>Guardrails for Amazon Bedrock</strong>: centralized safety controls (content filters, PII filters, topic restrictions, grounding checks).</li>
+      <li><strong>Knowledge Bases for Amazon Bedrock</strong>: managed RAG (ingest docs, chunk/embed, retrieve).</li>
+      <li><strong>Amazon SageMaker</strong>: build/train/deploy ML models; MLOps, feature store patterns, notebooks, endpoints.</li>
+      <li><strong>Amazon OpenSearch / Aurora pgvector / DynamoDB (as metadata)</strong>: possible components in custom RAG stacks.</li>
+      <li><strong>EventBridge / Step Functions</strong>: orchestration of AI workflows and tool-calling pipelines.</li>
+    </ul>
+
+    <h3>GenAI architectural patterns (interview-grade)</h3>
+
+    <h4>A) RAG (Retrieval Augmented Generation)</h4>
+    <p><strong>Goal:</strong> reduce hallucinations by grounding answers in your documents.</p>
+    <ul>
+      <li>Ingest documents (S3, Confluence, SharePoint connectors depending on stack).</li>
+      <li>Chunking strategy matters (structure-aware chunking beats naive fixed-size for docs).</li>
+      <li>Embed chunks; store vectors; at query-time retrieve top-k, then generate with citations.</li>
+      <li>Add <strong>guardrails</strong> and <strong>grounding checks</strong>.</li>
+    </ul>
+
+    <h4>B) Tool use / Agents</h4>
+    <p><strong>Goal:</strong> model decides when to call tools (APIs) to complete tasks.</p>
+    <ul>
+      <li>Define actions with least privilege (IAM role for agent/tool execution).</li>
+      <li>Constrain tools: allowlist operations; validate inputs; implement safe retries and timeouts.</li>
+      <li>Log every tool invocation (CloudTrail, app logs) for audit.</li>
+    </ul>
+
+    <h4>C) Async AI pipelines</h4>
+    <ul>
+      <li>Queue requests via SQS; worker does Bedrock invocation; store results in DynamoDB/S3.</li>
+      <li>Use Step Functions for multi-step: classify → retrieve → generate → validate → store → notify.</li>
+    </ul>
+
+    <h3>GenAI security & safety checklist</h3>
+    <ul>
+      <li><strong>Data boundaries</strong>: do not send secrets/PII unless required; minimize prompt content.</li>
+      <li><strong>PII redaction</strong>: before sending to model; also filter output.</li>
+      <li><strong>Prompt injection defenses</strong>:
+        <ul>
+          <li>Treat retrieved docs as untrusted input; separate system instructions from context.</li>
+          <li>Use allowlisted tools; never let model choose arbitrary URLs or credentials.</li>
+          <li>Implement grounding requirements (“answer only from provided sources”).</li>
+        </ul>
+      </li>
+      <li><strong>Guardrails</strong>: enforce topic restrictions, harmful content filters, and sensitive info filters.</li>
+      <li><strong>Audit</strong>: log prompts/outputs carefully (redact); keep trace IDs and tool-call logs.</li>
+      <li><strong>Networking</strong>: prefer private connectivity where possible; restrict egress.</li>
+    </ul>
+
+    <h3>Python: Bedrock invocation (runtime) pattern</h3>
+    <pre><code class="language-python">import json
+import boto3
+
+bedrock = boto3.client("bedrock-runtime", region_name="us-east-1")
+
+# Example uses a generic "messages" style payload used by some FMs.
+# Exact schema depends on the model provider; always follow the model's request format.
+model_id = "anthropic.claude-3-5-sonnet-20240620-v1:0"  # example; choose what your account has access to
+
+payload = {
+  "messages": [
+    {"role": "user", "content": [{"type": "text", "text": "Explain idempotency for SQS consumers with an example."}]}
+  ],
+  "max_tokens": 400
+}
+
+resp = bedrock.invoke_model(
+    modelId=model_id,
+    contentType="application/json",
+    accept="application/json",
+    body=json.dumps(payload)
+)
+
+body = json.loads(resp["body"].read())
+print(body)
+</code></pre>
+
+    <h3>C#/.NET: Bedrock invocation (conceptual SDK pattern)</h3>
+    <p class="muted">
+      AWS SDK APIs differ by package/version; the senior signal is that you can structure requests, handle errors, timeouts,
+      and log safely (redacting sensitive info). Validate exact model payload schema for the chosen FM.
+    </p>
+    <pre><code class="language-csharp">using System.Text;
+using System.Text.Json;
+using Amazon.BedrockRuntime;
+using Amazon.BedrockRuntime.Model;
+
+var client = new AmazonBedrockRuntimeClient(Amazon.RegionEndpoint.USEast1);
+
+var payload = new
+{
+    messages = new[]
+    {
+        new { role = "user", content = new[] { new { type = "text", text = "Give a safe RAG architecture on AWS." } } }
+    },
+    max_tokens = 400
+};
+
+var req = new InvokeModelRequest
+{
+    ModelId = "anthropic.claude-3-5-sonnet-20240620-v1:0", // example
+    ContentType = "application/json",
+    Accept = "application/json",
+    Body = new MemoryStream(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload)))
+};
+
+var resp = await client.InvokeModelAsync(req);
+using var reader = new StreamReader(resp.Body);
+var json = await reader.ReadToEndAsync();
+Console.WriteLine(json);
+</code></pre>
+
+    <h3>Bedrock Knowledge Bases (managed RAG) — what to explain</h3>
+    <ul>
+      <li>Create knowledge base; connect data source (often S3); run ingestion.</li>
+      <li>At query time: retrieve relevant chunks; generate answer grounded in sources.</li>
+      <li>Operational concerns: ingestion schedule, document versioning, access control to source docs.</li>
+    </ul>
+
+    <h4>Python: Knowledge Base creation (pattern consistent with AWS blog examples)</h4>
+    <pre><code class="language-python">import boto3
+
+bedrock_agent = boto3.client("bedrock-agent", region_name="us-west-2")
+
+kb = bedrock_agent.create_knowledge_base(
+    name="my-managed-kb",
+    description="Product docs",
+    roleArn="arn:aws:iam::123456789012:role/BedrockKBRole",
+    knowledgeBaseConfiguration={
+        "type": "MANAGED",
+        "managedKnowledgeBaseConfiguration": {
+            "embeddingModelType": "MANAGED"
+        }
+    }
+)
+
+kb_id = kb["knowledgeBase"]["knowledgeBaseId"]
+print("KB:", kb_id)
+
+ds = bedrock_agent.create_data_source(
+    knowledgeBaseId=kb_id,
+    name="my-s3-docs",
+    dataSourceConfiguration={
+        "type": "S3",
+        "s3Configuration": {
+            "bucketArn": "arn:aws:s3:::my-docs-bucket",
+            "inclusionPrefixes": ["documents/"]
+        }
+    }
+)
+
+bedrock_agent.start_ingestion_job(
+    knowledgeBaseId=kb_id,
+    dataSourceId=ds["dataSource"]["dataSourceId"]
+)
+print("Ingestion started")
+</code></pre>
+
+    <h3>Guardrails for Bedrock — what to explain</h3>
+    <ul>
+      <li>Central policy layer: harmful content filters, denied topics, word filters, sensitive info (PII) filters.</li>
+      <li>Apply consistently across models; prefer “defense in depth” (guardrails + app validation + least privilege).</li>
+      <li>Use to reduce risk of leaking PII/secrets and to enforce policy constraints.</li>
+    </ul>
+
+    <h3>Interview scenarios with AI</h3>
+    <ol>
+      <li><strong>Customer support summarizer</strong>: redact PII, store transcript in S3, summarize via Bedrock, keep audit logs.</li>
+      <li><strong>Internal doc assistant</strong>: RAG with Knowledge Bases; per-document ACL enforcement; citations; guardrails.</li>
+      <li><strong>Agentic deploy helper</strong>: tool calls to CI/CD APIs; strict allowlists; approvals; full audit trail.</li>
+    </ol>
+  </section>
+
+  <section id="system-design">
+    <h2>17) System Design prompts & answer frameworks</h2>
+
+    <h3>Prompt 1: “Design an order processing platform (10k orders/min) with exactly-once business effects”</h3>
+    <ul>
+      <li>API Gateway + Lambda/ECS for ingest; validate and write to DynamoDB (idempotency key).</li>
+      <li>Emit domain event to EventBridge; route to SQS per downstream bounded context.</li>
+      <li>Consumers use conditional writes / dedupe store; DLQs for poison messages.</li>
+      <li>Step Functions for long workflows; compensations for failures.</li>
+      <li>Observability: trace IDs, dashboards, alarms, DLQ depth alerts.</li>
+    </ul>
+
+    <h3>Prompt 2: “Design a GenAI doc assistant for internal policies”</h3>
+    <ul>
+      <li>Docs in S3, access controlled; ingest into Bedrock Knowledge Base.</li>
+      <li>Auth via IAM Identity Center/Cognito; enforce user document ACLs (filter retrieval by entitlements).</li>
+      <li>Bedrock Guardrails to block sensitive topic leakage; PII masking.</li>
+      <li>Store conversation metadata safely; redact logs; short retention for prompts if required.</li>
+    </ul>
+
+    <h3>Prompt 3: “Migrate a monolith to microservices on AWS with minimal downtime”</h3>
+    <ul>
+      <li>Strangler fig pattern; start with edges: API gateway + routing.</li>
+      <li>Data: CDC via DMS or app-level events; avoid distributed transactions; use sagas.</li>
+      <li>Deployment: blue/green + canary; feature flags; observability first.</li>
+    </ul>
+  </section>
+
+  <section id="practice">
+    <h2>18) Hands-on labs checklist</h2>
+    <ul>
+      <li>Build a Lambda + SQS worker with DLQ and idempotency.</li>
+      <li>Create a private Lambda in VPC with VPC endpoints (S3, DynamoDB, Secrets Manager).</li>
+      <li>Deploy a small ECS Fargate service behind ALB with autoscaling and structured logs.</li>
+      <li>Create a DynamoDB table with GSI that supports 2–3 access patterns without scans.</li>
+      <li>Create CI/CD pipeline that deploys IaC + app with canary strategy.</li>
+      <li>Build a simple RAG demo: S3 docs → Knowledge Base ingestion → retrieval + answer + guardrails.</li>
+    </ul>
+  </section>
+
+  <section id="question-bank">
+    <h2>19) Senior-level question bank (with what interviewers want)</h2>
+
+    <h3>IAM/Security</h3>
+    <ul>
+      <li><strong>How do SCPs, permissions boundaries, and IAM policies interact?</strong>
+        <br/><span class="muted">They want: layered evaluation + explicit deny precedence; boundaries limit maximum permissions.</span>
+      </li>
+      <li><strong>Explain KMS key policy vs IAM policy; why does access fail even with IAM allow?</strong>
+        <br/><span class="muted">They want: key policy can block; both must permit; grants used by services.</span>
+      </li>
+      <li><strong>How do you prevent data exfiltration from a VPC?</strong>
+        <br/><span class="muted">They want: endpoints, egress controls, NACL/SG, DNS controls, proxies, logging, WAF.</span>
+      </li>
+    </ul>
+
+    <h3>Serverless/Event-driven</h3>
+    <ul>
+      <li><strong>SQS visibility timeout vs Lambda timeout—how do you set them?</strong>
+        <br/><span class="muted">They want: visibility &#62; max processing; handle extension; avoid duplicate inflight.</span>
+      </li>
+      <li><strong>How do you guarantee “exactly once” effects?</strong>
+        <br/><span class="muted">They want: idempotency keys + conditional writes/transactions + outbox/CDC patterns.</span>
+      </li>
+    </ul>
+
+    <h3>Databases</h3>
+    <ul>
+      <li><strong>DynamoDB hot partition: how do you detect and fix?</strong>
+        <br/><span class="muted">They want: metrics (throttles, consumed capacity), key redesign, sharding, write spreading.</span>
+      </li>
+      <li><strong>Lambda to RDS: what goes wrong at scale?</strong>
+        <br/><span class="muted">They want: connection storms; use RDS Proxy, pooling, limit concurrency.</span>
+      </li>
+    </ul>
+
+    <h3>Observability</h3>
+    <ul>
+      <li><strong>What alarms would you set for an API?</strong>
+        <br/><span class="muted">They want: 5xx rate, p95/p99 latency, saturation, dependency errors, DLQ depth.</span>
+      </li>
+    </ul>
+
+    <h3>AI/GenAI</h3>
+    <ul>
+      <li><strong>How do you reduce hallucinations?</strong>
+        <br/><span class="muted">They want: RAG, grounding checks, constrained answers, evals, citations.</span>
+      </li>
+      <li><strong>How do you mitigate prompt injection?</strong>
+        <br/><span class="muted">They want: treat retrieved text as untrusted, tool allowlists, guardrails, isolation, validation.</span>
+      </li>
+      <li><strong>Where do you store prompts and outputs?</strong>
+        <br/><span class="muted">They want: minimize retention; redact; encrypt; strict access; audit trails.</span>
+      </li>
+    </ul>
+  </section>
+
+  <section id="cheatsheets">
+    <h2>20) CLI/Snippet cheat sheets (Python + .NET)</h2>
+
+    <h3>AWS CLI essentials</h3>
+    <pre class="cmd"><code class="nohighlight"># Who am I?
+aws sts get-caller-identity
+
+# List Lambda functions
+aws lambda list-functions --query 'Functions[].FunctionName' --output table
+
+# Tail logs (CloudWatch Logs Insights is better for production)
+aws logs describe-log-groups --log-group-name-prefix "/aws/lambda"
+
+# S3 list
+aws s3 ls s3://my-bucket --recursive --human-readable --summarize</code></pre>
+
+    <h3>Python SDK essentials (boto3)</h3>
+    <pre><code class="language-python">import boto3
+
+# Use explicit region in production
+session = boto3.Session(region_name="us-east-1")
+sqs = session.client("sqs")
+resp = sqs.list_queues()
+print(resp.get("QueueUrls", []))</code></pre>
+
+    <h3>.NET SDK essentials</h3>
+    <pre><code class="language-csharp">using Amazon;
+using Amazon.SQS;
+
+var sqs = new AmazonSQSClient(RegionEndpoint.USEast1);
+var queues = await sqs.ListQueuesAsync("");
+Console.WriteLine(string.Join("\n", queues.QueueUrls));</code></pre>
+
+    <h3>Operational guardrails (what to automate)</h3>
+    <ul>
+      <li>Mandatory encryption (S3, EBS, RDS), logs retention, CloudTrail enabled, no public buckets, no 0.0.0.0/0 admin ports.</li>
+      <li>CI checks: policy-as-code + IaC scanning.</li>
+      <li>Standard dashboards & alarms templates.</li>
+    </ul>
+
+    <hr/>
+    <p class="muted">
+      References (for your verification): Amazon Bedrock main page, Bedrock Guardrails documentation,
+      and AWS blog examples for Knowledge Bases usage.
+    </p>
+  </section>
+
+</main>
+
+<!-- Syntax highlighting matching the Visual Studio Code editor (Dark+ / vs2015 theme) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('pre code:not(.nohighlight)').forEach(function (block) {
+      window.hljs.highlightElement(block);
+    });
+  });
+</script>
+</body>
+</html>

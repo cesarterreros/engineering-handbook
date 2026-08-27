@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Technical Interview Cheat Sheet</title>
+<style>
+    @page { margin: 10mm; size: A4; }
+    body {
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-size: 10.5px;
+        line-height: 1.3;
+        color: #333;
+        margin: 0;
+        background: #fff;
+    }
+    h1 {
+        text-align: center;
+        font-size: 18px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 0;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #2c3e50;
+        color: #2c3e50;
+        column-span: all;
+        -webkit-column-span: all;
+        break-before: avoid;
+        break-after: avoid;
+        page-break-before: avoid;
+        page-break-after: avoid;
+    }
+    .container {
+        column-count: 2;
+        column-gap: 20px;
+        column-rule: 1px solid #eee;
+        column-fill: auto;
+    }
+    .section {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin-bottom: 15px;
+        background: #fdfdfd;
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #eaeaea;
+    }
+    h2 {
+        font-size: 13px;
+        color: #e74c3c;
+        margin-top: 0;
+        margin-bottom: 8px;
+        border-bottom: 1px solid #fadbd8;
+        padding-bottom: 2px;
+    }
+    h3 {
+        font-size: 11px;
+        color: #2980b9;
+        margin: 8px 0 4px 0;
+    }
+    p { margin: 4px 0; }
+    ul {
+        margin: 4px 0;
+        padding-left: 18px;
+    }
+    li { margin-bottom: 2px; }
+    pre {
+        background: #f4f6f7;
+        padding: 6px;
+        border-left: 3px solid #3498db;
+        border-radius: 2px;
+        overflow-x: auto;
+        font-size: 9px;
+        margin: 4px 0;
+        white-space: pre-wrap;
+    }
+    code {
+        font-family: 'Consolas', 'Courier New', monospace;
+        color: #c0392b;
+        background: #f9f9f9;
+        padding: 1px 3px;
+        border-radius: 2px;
+    }
+    pre code { color: #2c3e50; background: transparent; padding: 0; }
+    .keyword { color: #0000ff; }
+    .string { color: #a31515; }
+    .comment { color: #008000; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Technical Interview Cheat Sheet</h1>
+
+    <!-- EF Core -->
+    <div class="section">
+        <h2>1. EF Core (Entity Framework)</h2>
+        
+        <h3>Migrations &mdash; What &amp; Why</h3>
+        <p>A migration is a versioned C# file (in <code>/Migrations</code>) describing incremental schema changes so the DB model stays in sync with your entity model. Each has <code>Up()</code> (apply) / <code>Down()</code> (revert), plus a snapshot file (<code>ModelSnapshot.cs</code>) EF diffs against to compute the next migration. <strong>Never hand-edit the snapshot.</strong></p>
+
+        <h3>Core CLI (dotnet-ef)</h3>
+        <pre><code><span class="comment"># install/update the tool</span>
+dotnet tool install --global dotnet-ef
+dotnet add package Microsoft.EntityFrameworkCore.Design
+
+<span class="comment"># create / remove (last, if not applied)</span>
+dotnet ef migrations add InitialCreate
+dotnet ef migrations remove
+
+<span class="comment"># apply to DB (update = "migrate to latest or named")</span>
+dotnet ef database update
+dotnet ef database update AddOrders   <span class="comment"># target a migration</span>
+dotnet ef database update 0           <span class="comment"># revert ALL (rollback)</span>
+
+<span class="comment"># inspect</span>
+dotnet ef migrations list
+dotnet ef migrations has-pending-model-changes</code></pre>
+        <p>Multi-project: use <code>-p</code> (project holding migrations) &amp; <code>-s</code> (startup project), e.g. <code>dotnet ef migrations add X -p Data -s Api</code>. PMC equivalents: <code>Add-Migration</code>, <code>Update-Database</code>, <code>Remove-Migration</code>.</p>
+
+        <h3>Applying in Production</h3>
+        <ul>
+            <li><strong>SQL script (preferred/safest):</strong> generate, review, run via DBA/CI. <br><code>dotnet ef migrations script FromMig ToMig -o migrate.sql</code>. Use <code>--idempotent</code> so it checks <code>__EFMigrationsHistory</code> and only applies missing ones.</li>
+            <li><strong>Bundle:</strong> self-contained executable, great for CI/CD (no SDK/tool on server). <br><code>dotnet ef migrations bundle</code> &rarr; <code>./efbundle</code>.</li>
+            <li><strong>Avoid <code>context.Database.Migrate()</code> at app startup</strong> in multi-instance/prod: causes race conditions, needs elevated DB rights, and blocks rollout on failure. Fine for local/dev or single-instance.</li>
+        </ul>
+        <pre><code><span class="comment">// dev-only auto-migrate</span>
+<span class="keyword">using</span> <span class="keyword">var</span> scope = app.Services.CreateScope();
+<span class="keyword">var</span> db = scope.ServiceProvider.GetRequiredService&lt;AppDbContext&gt;();
+<span class="keyword">await</span> db.Database.MigrateAsync();</code></pre>
+
+        <h3>Gotchas &amp; Best Practices</h3>
+        <ul>
+            <li><strong>__EFMigrationsHistory:</strong> tracking table EF uses to know which migrations already ran (idempotency).</li>
+            <li><strong>Data loss warning:</strong> dropping columns/tables emits a warning in generated code &mdash; review <code>Up()</code> before applying.</li>
+            <li><strong>Custom SQL / seed:</strong> add <code>migrationBuilder.Sql("...")</code> for data moves; use <code>HasData()</code> for model seed data (tracked by migrations).</li>
+            <li><strong>Renames:</strong> EF often sees a rename as drop+add (data loss). Hand-edit to <code>RenameColumn</code>/<code>RenameTable</code>.</li>
+            <li><strong>Team workflow:</strong> one migration per PR; if two devs add migrations concurrently, re-generate after merge so the snapshot is linear.</li>
+            <li><strong>Reset (dev only):</strong> delete <code>/Migrations</code> + drop DB, then re-add InitialCreate.</li>
+            <li><strong>EF 9/10:</strong> <code>--idempotent</code> scripts, bundles, and <code>has-pending-model-changes</code> are the modern, CI-friendly path; static-analysis catches model/snapshot drift.</li>
+        </ul>
+
+        <h3>Query Filters</h3>
+        <p>Applied globally to entities. Essential for soft-deletes and multi-tenancy.</p>
+        <pre><code><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> OnModelCreating(ModelBuilder mb) {
+    mb.Entity&lt;TenantData&gt;().HasQueryFilter(t =&gt; t.TenantId == _currentTenantId);
+}</code></pre>
+        <p>Bypass filter via <code>.IgnoreQueryFilters()</code>.</p>
+
+        <h3>Concurrency</h3>
+        <p><strong>Optimistic concurrency:</strong> EF Core holds no locks &mdash; conflicts are detected only at <code>SaveChanges()</code>. A concurrency token is added to the <code>WHERE</code> clause of <code>UPDATE</code>/<code>DELETE</code>; if 0 rows match, another user changed the row.</p>
+        <ul>
+            <li><strong>[Timestamp] / <code>IsRowVersion()</code>:</strong> DB auto-updates a <code>byte[]</code> on every change (best for SQL Server).</li>
+            <li><strong>[ConcurrencyCheck] / <code>IsConcurrencyToken()</code>:</strong> Track an existing column (e.g., <code>Version</code> int, <code>LastModified</code>) &mdash; portable to any provider.</li>
+        </ul>
+        <pre><code><span class="keyword">public</span> <span class="keyword">class</span> Product {
+    <span class="keyword">public</span> <span class="keyword">int</span> Id { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    [Timestamp] <span class="comment">// Maps to rowversion in SQL</span>
+    <span class="keyword">public</span> <span class="keyword">byte</span>[] RowVersion { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}</code></pre>
+        <p><strong>Handle the conflict:</strong> catch <code>DbUpdateConcurrencyException</code> on <code>SaveChanges()</code>, inspect <code>ex.Entries</code>, then pick a strategy.</p>
+        <pre><code><span class="keyword">try</span> { <span class="keyword">await</span> context.SaveChangesAsync(); }
+<span class="keyword">catch</span> (DbUpdateConcurrencyException ex) {
+    <span class="keyword">foreach</span> (<span class="keyword">var</span> entry <span class="keyword">in</span> ex.Entries) {
+        <span class="keyword">var</span> db = <span class="keyword">await</span> entry.GetDatabaseValuesAsync();
+        <span class="keyword">if</span> (db == <span class="keyword">null</span>) { <span class="comment">/* row deleted by another user */</span> }
+        <span class="keyword">else</span> entry.OriginalValues.SetValues(db); <span class="comment">// refresh token, then retry</span>
+    }
+}</code></pre>
+        <p><strong>Resolution strategies:</strong> <em>Store Wins</em> (reload DB values), <em>Client Wins</em> (overwrite originals with DB, re-apply user changes), or <em>Merge</em> (property-by-property). Wrap <code>SaveChanges()</code> in retry logic.</p>
+    </div>
+
+    <!-- PostgreSQL -->
+    <div class="section">
+        <h2>2. PostgreSQL</h2>
+        
+        <h3>Schema & Indexing</h3>
+        <ul>
+            <li><strong>Schemas:</strong> Namespaces for tables (e.g., <code>public</code>, <code>tenant_a</code>). <code>SET search_path TO tenant_a;</code></li>
+            <li><strong>Indexing:</strong> B-Tree (default, > < =), GIN (for JSONB/Full-text), GiST (geometric/range).</li>
+        </ul>
+        <pre><code><span class="keyword">CREATE INDEX</span> idx_user_email <span class="keyword">ON</span> users (email);
+<span class="keyword">CREATE INDEX</span> idx_jsonb_data <span class="keyword">ON</span> docs <span class="keyword">USING</span> GIN (payload);</code></pre>
+        
+        <h3>Multi-Tenant & RLS (Row-Level Security)</h3>
+        <p>Data isolation at the DB engine level using shared schema.</p>
+        <pre><code><span class="keyword">ALTER TABLE</span> orders <span class="keyword">ENABLE ROW LEVEL SECURITY</span>;
+
+<span class="keyword">CREATE POLICY</span> tenant_isolation <span class="keyword">ON</span> orders
+<span class="keyword">USING</span> (tenant_id = current_setting(<span class="string">'app.current_tenant'</span>)::uuid);</code></pre>
+        <p>In the app middleware or EF interceptor, execute: <br><code>SET LOCAL app.current_tenant = 'tenant-uuid';</code></p>
+    </div>
+
+    <!-- Identity & Auth -->
+    <div class="section">
+        <h2>3. OAuth2/OIDC + JWT Middleware</h2>
+        
+        <h3>Microsoft.Identity.Web</h3>
+        <p>Simplifies Azure AD / Entra ID integration.</p>
+        <pre><code>builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApi(builder.Configuration, <span class="string">"AzureAd"</span>);</code></pre>
+        
+        <h3>Tenant Middleware (JWT Extraction)</h3>
+        <p>Extract tenant ID from validated JWT claims (e.g., <code>tid</code> claim) and inject into scoped services (like EF Core <code>DbContext</code>).</p>
+        <pre><code>app.Use(<span class="keyword">async</span> (context, next) =&gt; {
+    <span class="keyword">var</span> tidClaim = context.User.FindFirstValue(
+        <span class="string">"http://schemas.microsoft.com/identity/claims/tenantid"</span>);
+    
+    <span class="keyword">if</span> (tidClaim != <span class="keyword">null</span>) {
+        <span class="keyword">var</span> tenantContext = context.RequestServices
+                                   .GetRequiredService&lt;ITenantContext&gt;();
+        tenantContext.TenantId = tidClaim;
+    }
+    <span class="keyword">await</span> next();
+});</code></pre>
+    </div>
+
+    <!-- Docker & K8s -->
+    <div class="section">
+        <h2>4. Docker + Basic Kubernetes</h2>
+        
+        <h3>Docker Multi-stage Build</h3>
+        <pre><code><span class="keyword">FROM</span> mcr.microsoft.com/dotnet/sdk:10.0 <span class="keyword">AS</span> build
+<span class="keyword">WORKDIR</span> /src
+<span class="keyword">COPY</span> *.csproj .
+<span class="keyword">RUN</span> dotnet restore
+<span class="keyword">COPY</span> . .
+<span class="keyword">RUN</span> dotnet publish -c Release -o /app
+
+<span class="keyword">FROM</span> mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled
+<span class="keyword">WORKDIR</span> /app
+<span class="keyword">COPY</span> --from=build /app .
+<span class="keyword">ENTRYPOINT</span> [<span class="string">"dotnet"</span>, <span class="string">"Api.dll"</span>]</code></pre>
+        <ul>
+            <li><strong>Why:</strong> small final image, less attack surface, no SDK/source/build secrets shipped.</li>
+            <li><strong>Layer caching:</strong> <code>COPY *.csproj</code> + <code>dotnet restore</code> before copying full source so restore is cached.</li>
+            <li><strong>Slim base + non-root:</strong> use <code>-chiseled</code>/alpine/distroless and <code>USER app</code>; add <code>.dockerignore</code> (bin, obj, .git, .env).</li>
+            <li><strong>Target a stage:</strong> <code>docker build --target build .</code> (e.g. run a test stage in CI).</li>
+        </ul>
+
+        <h3>Secrets Handling</h3>
+        <ul>
+            <li><strong>Never bake secrets:</strong> avoid <code>ENV</code>/<code>ARG</code> secrets or <code>COPY .env</code> &mdash; visible via <code>docker history</code>/inspect; stay in layers even if deleted later.</li>
+            <li><strong>Build-time:</strong> BuildKit <code>RUN --mount=type=secret,id=token ...</code> &rarr; <code>docker build --secret id=token,src=./token.txt</code> (not stored in any layer).</li>
+            <li><strong>Runtime:</strong> inject at start &mdash; K8s Secrets mounted as files (<code>/run/secrets/...</code>) preferred over env vars; better yet use managed/workload identity so no static secret exists.</li>
+        </ul>
+
+        <h3>CI Image Gates</h3>
+        <ul>
+            <li><strong>Scan &amp; fail:</strong> Trivy/Grype/Docker Scout &mdash; <code>trivy image --exit-code 1 --severity HIGH,CRITICAL</code>.</li>
+            <li><strong>Lint &amp; secrets:</strong> hadolint (Dockerfile), gitleaks/trufflehog (committed secrets).</li>
+            <li><strong>Sign &amp; provenance:</strong> Cosign/Sigstore signatures + SBOM (Syft); verify at deploy.</li>
+            <li><strong>Policy/admission:</strong> Kyverno/Gatekeeper/OPA enforce non-root, trusted registry, no <code>:latest</code>.</li>
+            <li><strong>Immutable deploys:</strong> deploy by digest (<code>image@sha256:...</code>) so what you scanned is what you run.</li>
+        </ul>
+
+        <h3>Kubernetes Core Concepts</h3>
+        <p><strong>Architecture:</strong> <em>Control plane</em> = api-server (front door) + etcd (state) + scheduler (places Pods) + controller-manager (reconcile loops). <em>Worker node</em> = kubelet (runs Pods) + kube-proxy (Service routing) + container runtime (containerd via CRI; <em>dockershim removed in 1.24</em>). Model is <strong>declarative desired-state reconciliation</strong>.</p>
+        <ul>
+            <li><strong>Pod:</strong> Smallest deployable unit (1+ containers sharing network/storage). Rarely created directly.</li>
+            <li><strong>ReplicaSet:</strong> Keeps N identical Pods running (managed by Deployment).</li>
+            <li><strong>Deployment:</strong> Stateless apps; ReplicaSet mgmt, rolling updates &amp; rollback (<code>kubectl rollout undo</code>).</li>
+            <li><strong>StatefulSet:</strong> Stateful apps (DBs) &mdash; stable identity + ordered, persistent storage.</li>
+            <li><strong>DaemonSet:</strong> One Pod per node (agents, logging). <strong>Job/CronJob:</strong> run-to-completion / scheduled.</li>
+            <li><strong>Service:</strong> Stable IP/DNS + load-balancing via label selector. <em>ClusterIP</em> (internal), <em>NodePort</em>, <em>LoadBalancer</em>, <em>ExternalName</em>.</li>
+            <li><strong>Ingress / Gateway API:</strong> HTTP(S) host/path routing into cluster (Gateway API is the modern successor).</li>
+            <li><strong>ConfigMap / Secret:</strong> Externalized config / sensitive data (Secrets are only <em>base64</em>, not encrypted by default).</li>
+            <li><strong>Namespace:</strong> Logical isolation + quotas. <strong>PV/PVC + StorageClass:</strong> storage abstraction &amp; dynamic provisioning.</li>
+        </ul>
+        <ul>
+            <li><strong>Labels &amp; selectors:</strong> How objects link (Service&rarr;Pods, Deployment&rarr;Pods). Mismatch = classic bug.</li>
+            <li><strong>requests vs limits:</strong> requests drive scheduling; over-limit &rarr; memory=<em>OOMKilled</em>, CPU=<em>throttled</em>.</li>
+            <li><strong>Probes:</strong> <em>readiness</em> (take traffic?), <em>liveness</em> (restart if stuck), <em>startup</em> (slow boot).</li>
+            <li><strong>Reliability:</strong> HPA (scale Pods), Cluster Autoscaler/Karpenter (nodes), PodDisruptionBudget, self-healing.</li>
+            <li><strong>Security:</strong> RBAC + ServiceAccount (least privilege), <code>securityContext</code> (runAsNonRoot), NetworkPolicy, Pod Security Admission.</li>
+            <li><strong>Extend:</strong> CRDs + Operators (custom API + reconcile logic). <strong>Config:</strong> Kustomize (overlays) vs Helm (templated charts).</li>
+            <li><strong>Debug Pod states:</strong> <code>Pending</code>, <code>ImagePullBackOff</code>, <code>CrashLoopBackOff</code>, <code>OOMKilled</code> &mdash; use <code>logs</code>/<code>describe</code>/<code>get events</code>.</li>
+        </ul>
+        <p><strong>Manifest = YAML with 4 top-level keys:</strong> <code>apiVersion</code>, <code>kind</code>, <code>metadata</code>, <code>spec</code>. Apply with <code>kubectl apply -f</code>.</p>
+        <pre><code><span class="keyword">apiVersion:</span> apps/v1
+<span class="keyword">kind:</span> Deployment
+<span class="keyword">metadata:</span> { name: my-api }
+<span class="keyword">spec:</span>
+  replicas: 2
+  selector:
+    matchLabels: { app: api }
+  template:
+    metadata: { labels: { app: api } }
+    spec:
+      containers:
+      - name: api
+        image: myapi:v1
+        ports: [{ containerPort: 8080 }]</code></pre>
+
+        <h3>Common kubectl Commands</h3>
+        <pre><code><span class="keyword">kubectl apply</span> -f app.yaml            <span class="comment"># create/update declaratively</span>
+<span class="keyword">kubectl get</span> pods -o wide -A            <span class="comment"># list Pods (all namespaces, node info)</span>
+<span class="keyword">kubectl describe</span> pod &lt;name&gt;           <span class="comment"># details + events (first stop for debugging)</span>
+<span class="keyword">kubectl logs</span> &lt;pod&gt; -f [-c &lt;ctr&gt;] [-p]  <span class="comment"># follow logs; -p = previous crash</span>
+<span class="keyword">kubectl exec</span> -it &lt;pod&gt; -- sh           <span class="comment"># shell into a container</span>
+<span class="keyword">kubectl get events</span> --sort-by=.lastTimestamp
+<span class="keyword">kubectl rollout</span> status/undo deployment/api
+<span class="keyword">kubectl scale</span> deployment/api --replicas=5
+<span class="keyword">kubectl port-forward</span> svc/api 8080:80   <span class="comment"># local access to a Service</span>
+<span class="keyword">kubectl top</span> pod/node                    <span class="comment"># live CPU/memory (needs metrics-server)</span>
+<span class="keyword">kubectl config</span> use-context &lt;ctx&gt;       <span class="comment"># switch cluster; -n sets namespace</span>
+<span class="keyword">kubectl apply</span> -k ./overlays/prod        <span class="comment"># Kustomize; --dry-run=client to preview</span></code></pre>
+    </div>
+
+    <!-- xUnit + Testcontainers -->
+    <div class="section">
+        <h2>5. xUnit + Testcontainers</h2>
+        <p>Spin up real Docker containers for integration tests instead of using mocks or in-memory DBs.</p>
+        <pre><code><span class="keyword">public</span> <span class="keyword">class</span> DbFixture : IAsyncLifetime {
+    <span class="keyword">public</span> PostgreSqlContainer Db = <span class="keyword">new</span> PostgreSqlBuilder()
+        .WithDatabase(<span class="string">"testdb"</span>)
+        .Build();
+
+    <span class="keyword">public</span> <span class="keyword">async</span> Task InitializeAsync() 
+        =&gt; <span class="keyword">await</span> Db.StartAsync();
+
+    <span class="keyword">public</span> <span class="keyword">async</span> Task DisposeAsync() 
+        =&gt; <span class="keyword">await</span> Db.DisposeAsync().AsTask();
+}</code></pre>
+        <p>Use <code>[Collection("DbCollection")]</code> to share the fixture across multiple xUnit test classes.</p>
+    </div>
+
+    <!-- Nice to Haves -->
+    <div class="section">
+        <h2>6. Nice to Have Skills</h2>
+        
+        <h3>Redis</h3>
+        <p>In-memory data store. Used for distributed caching (<code>IDistributedCache</code>), session state, and Pub/Sub messaging. Extremely fast key-value lookups.</p>
+        
+        <h3>Message Queue / Blob</h3>
+        <ul>
+            <li><strong>MQ (RabbitMQ, Azure Service Bus):</strong> Decouples microservices. Enables async processing, event-driven architectures, and load leveling. <em>(Tools: MassTransit, NServiceBus)</em>.</li>
+            <li><strong>Blob Storage (AWS S3, Azure Blob):</strong> Storing unstructured data (images, PDFs) cheaply. DB only stores the URL/URI.</li>
+        </ul>
+        
+        <h3>Helm</h3>
+        <p>The package manager for Kubernetes. Packages YAML manifests into reusable <em>Charts</em> with templating.</p>
+        <pre><code>helm install my-app ./my-chart
+helm upgrade my-app ./my-chart</code></pre>
+
+        <h4>Helm Quick Commands</h4>
+        <pre><code>helm repo add bitnami https://charts.bitnami.com/bitnami; helm repo update
+helm search repo/hub &lt;keyword&gt;              <span class="comment"># find charts</span>
+helm install my-app ./chart -n prod --create-namespace \
+     -f values.yaml --set image.tag=v2       <span class="comment"># -f/--set override values</span>
+helm upgrade --install my-app ./chart --atomic --wait
+                                             <span class="comment"># idempotent; rollback on fail</span>
+helm template ./chart | kubectl apply -f -   <span class="comment"># render locally (no Tiller since v3)</span>
+helm lint ./chart                            <span class="comment"># validate chart</span>
+helm list -A                                 <span class="comment"># releases across namespaces</span>
+helm history my-app; helm rollback my-app 1  <span class="comment"># revision history / revert</span>
+helm uninstall my-app -n prod                <span class="comment"># remove release</span>
+helm dependency update ./chart               <span class="comment"># fetch subcharts (Chart.yaml)</span></code></pre>
+
+        <h3>OpenTelemetry</h3>
+        <p>Vendor-neutral standard for Observability (Traces, Metrics, Logs).</p>
+        <pre><code>builder.Services.AddOpenTelemetry()
+    .WithTracing(tracer =&gt; tracer
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter());</code></pre>
+
+        <h3>Auth0 / SAML Broker</h3>
+        <p><strong>Auth0:</strong> Identity as a Service (IDaaS).<br>
+        <strong>SAML Broker:</strong> Acts as a middleman. Translates ancient enterprise SAML tokens into modern OIDC/JWT tokens so your app only needs to understand JWTs.</p>
+    </div>
+
+</div>
+
+</body>
+</html>

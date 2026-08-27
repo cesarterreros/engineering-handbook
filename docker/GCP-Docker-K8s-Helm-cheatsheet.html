@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Docker + Kubernetes + Helm on GCP — Cheat Sheet</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card-alt: #172033;
+    --accent-docker: #0db7ed;
+    --accent-k8s: #326ce5;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --code-bg: #0b1220;
+    --border: #334155;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 24px;
+  }
+  header {
+    max-width: 1400px;
+    margin: 0 auto 24px;
+    text-align: center;
+  }
+  header h1 { margin: 0 0 8px; font-size: 1.9rem; }
+  header p { color: var(--muted); margin: 0; max-width: 900px; margin: 0 auto; }
+  .legend {
+    display: flex; gap: 20px; justify-content: center; margin-top: 14px; flex-wrap: wrap;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--muted); }
+  .dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .dot.docker { background: var(--accent-docker); }
+  .dot.k8s { background: var(--accent-k8s); }
+
+  .grid { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .col {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    overflow: hidden;
+  }
+  .col.docker { border-top: 3px solid var(--accent-docker); }
+  .col.k8s { border-top: 3px solid var(--accent-k8s); }
+  .col h3 { margin: 0 0 10px; font-size: 1.02rem; }
+  .col.docker h3 { color: var(--accent-docker); }
+  .col.k8s h3 { color: var(--accent-k8s); }
+  .col p { margin: 8px 0; }
+  .col ul { margin: 8px 0; padding-left: 20px; }
+  .col li { margin: 3px 0; }
+  code {
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: "Cascadia Code", Consolas, monospace;
+    font-size: 0.85em;
+    color: #7dd3fc;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    overflow-x: auto;
+    margin: 10px 0;
+  }
+  pre code { background: none; padding: 0; color: #cbd5e1; font-size: 0.82rem; }
+  .note { color: var(--muted); font-size: 0.9rem; }
+  a { color: #7dd3fc; }
+  footer { max-width: 1400px; margin: 30px auto 0; color: var(--muted); font-size: 0.8rem; text-align: center; }
+
+  @media (max-width: 800px) {
+    .row { grid-template-columns: 1fr; }
+  }
+
+  /* Print / PDF: switch to a light, ink-friendly theme and avoid splitting
+     cards or code blocks across page boundaries. */
+  @media print {
+    @page { margin: 12mm; }
+    html, body {
+      background: #ffffff !important;
+      color: #111111 !important;
+      padding: 0 !important;
+    }
+    header p, .note, footer { color: #444444 !important; }
+    .legend span { color: #444444 !important; }
+
+    .grid { gap: 10px; max-width: 100% !important; }
+    .row {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 10px;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .col {
+      background: #ffffff !important;
+      border: 1px solid #cccccc !important;
+      padding: 10px 12px !important;
+      break-inside: avoid;
+      page-break-inside: avoid;
+      font-size: 0.8rem;
+    }
+    .col.docker { border-top: 3px solid #0369a1 !important; }
+    .col.k8s { border-top: 3px solid #1e40af !important; }
+    .col.docker h3 { color: #0369a1 !important; }
+    .col.k8s h3 { color: #1e40af !important; }
+
+    code {
+      background: #f1f5f9 !important;
+      color: #0f172a !important;
+    }
+    pre {
+      background: #f8fafc !important;
+      border: 1px solid #cccccc !important;
+      break-inside: avoid;
+      page-break-inside: avoid;
+      white-space: pre-wrap;
+      word-break: break-word;
+      padding: 8px !important;
+    }
+    pre code { color: #1e293b !important; font-size: 0.72rem; }
+    a { color: #1e40af !important; }
+
+    /* Ensure background colors/borders are honored by the print engine. */
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Docker + Kubernetes + Helm on GCP</h1>
+  <p>A dense reference for the common path: build a Docker image → store it in Artifact Registry → deploy it to GKE → expose, scale, secure, observe, and release it with Helm. GKE supports <strong>Autopilot</strong> (recommended for most production) and <strong>Standard</strong> (direct node/infrastructure control) modes.</p>
+  <div class="legend">
+    <span><span class="dot docker"></span> Docker / container workflow</span>
+    <span><span class="dot k8s"></span> Kubernetes, GKE, and Helm workflow</span>
+  </div>
+</header>
+
+<main class="grid">
+
+  <!-- Core concepts -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Core concepts</h3>
+      <ul>
+        <li><strong>Image:</strong> immutable package containing application code, runtime, libraries, and metadata.</li>
+        <li><strong>Container:</strong> running instance of an image.</li>
+        <li><strong>Registry:</strong> remote image store.</li>
+        <li><strong>Tag:</strong> mutable human-readable reference such as <code>v1.4.0</code>.</li>
+        <li><strong>Digest:</strong> immutable reference such as <code>sha256:...</code>; preferred for production deployments.</li>
+      </ul>
+    </div>
+    <div class="col k8s">
+      <h3>Orchestration concepts</h3>
+      <ul>
+        <li><strong>Kubernetes:</strong> orchestrates containers using declarative resources.</li>
+        <li><strong>GKE:</strong> Google-managed Kubernetes. Control plane is managed in both modes; Standard gives more node-pool and infrastructure control.</li>
+        <li><strong>Helm:</strong> package manager and templating engine for Kubernetes manifests. A Helm package is a <strong>chart</strong>; an installed chart is a <strong>release</strong>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Minimal Dockerfile / hierarchy -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Minimal Dockerfile</h3>
+      <pre><code>FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+RUN useradd --create-home appuser
+USER appuser
+EXPOSE 8080
+CMD ["python", "app.py"]</code></pre>
+      <p class="note">Use a small trusted base image, pin dependencies, run as non-root, and keep the build context small.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Typical workload hierarchy</h3>
+      <ul>
+        <li><code>Deployment</code> → manages replicated Pods and rolling updates.</li>
+        <li><code>Pod</code> → smallest schedulable unit; normally one application container.</li>
+        <li><code>Service</code> → stable virtual endpoint for Pods.</li>
+        <li><code>Ingress</code> / <code>Gateway</code> → HTTP routing and load balancing.</li>
+        <li><code>ConfigMap</code> → non-sensitive configuration.</li>
+        <li><code>Secret</code> → sensitive data; not automatically equivalent to a cloud secret manager.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Build/run local / create cluster -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Build, tag, and run locally</h3>
+      <pre><code>docker build -t my-api:dev .
+docker run --rm -p 8080:8080 my-api:dev
+docker images
+docker logs &lt;container&gt;
+docker exec -it &lt;container&gt; sh</code></pre>
+      <p class="note">Prefer explicit version tags over <code>latest</code>; use <code>.dockerignore</code> to avoid copying credentials, caches, <code>.git</code>, and datasets.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Create a GKE cluster</h3>
+      <p class="note">Autopilot:</p>
+      <pre><code>gcloud container clusters create-auto my-cluster \
+  --location=us-central1</code></pre>
+      <p class="note">Standard:</p>
+      <pre><code>gcloud container clusters create my-cluster \
+  --location=us-central1 \
+  --num-nodes=3</code></pre>
+      <p class="note">Use a regional cluster for higher control-plane availability. Validate supported versions and flags before production.</p>
+    </div>
+  </div>
+
+  <!-- Artifact Registry naming / connect kubectl -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Artifact Registry image naming</h3>
+      <pre><code>LOCATION-docker.pkg.dev/&lt;PROJECT_ID&gt;/&lt;REPOSITORY&gt;/&lt;IMAGE&gt;:&lt;TAG&gt;</code></pre>
+      <p class="note">Example:</p>
+      <pre><code>us-central1-docker.pkg.dev/acme-prod/apps/my-api:v1.4.0</code></pre>
+      <p class="note">Artifact Registry is the recommended GCP destination for Docker images; configure Docker authentication for the specific registry hostname.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Connect kubectl to GKE</h3>
+      <pre><code>gcloud container clusters get-credentials my-cluster \
+  --location=us-central1
+
+kubectl config current-context
+kubectl get nodes
+kubectl get namespaces</code></pre>
+      <p class="note"><code>get-credentials</code> updates your kubeconfig so <code>kubectl</code> can communicate with the cluster.</p>
+    </div>
+  </div>
+
+  <!-- Push / imperative deploy -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Push to Artifact Registry</h3>
+      <pre><code>gcloud artifacts repositories create apps \
+  --repository-format=docker \
+  --location=us-central1
+
+gcloud auth configure-docker us-central1-docker.pkg.dev
+
+docker build -t \
+  us-central1-docker.pkg.dev/acme-prod/apps/my-api:v1.4.0 .
+docker push \
+  us-central1-docker.pkg.dev/acme-prod/apps/my-api:v1.4.0</code></pre>
+      <p class="note">Grant the GKE node or workload identity permission to pull private images.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Imperative deployment (quick test)</h3>
+      <pre><code>kubectl create deployment my-api \
+  --image=us-central1-docker.pkg.dev/acme-prod/apps/my-api:v1.4.0
+kubectl expose deployment my-api \
+  --type=LoadBalancer --port=80 --target-port=8080
+kubectl get deploy,pods,svc</code></pre>
+      <p class="note">Use version-controlled YAML or Helm for repeatable environments; imperative commands are best for experiments.</p>
+    </div>
+  </div>
+
+  <!-- Multi-stage / declarative deployment -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Multi-stage production build</h3>
+      <pre><code>FROM node:22 AS build
+WORKDIR /src
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=build /src/dist /usr/share/nginx/html</code></pre>
+      <p class="note">The final image should contain only runtime assets — not compilers, package caches, source trees, or secrets.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Declarative Deployment skeleton</h3>
+      <pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels: {app: my-api}
+  template:
+    metadata: {labels: {app: my-api}}
+    spec:
+      containers:
+      - name: my-api
+        image: REGION-docker.pkg.dev/PROJECT/REPO/my-api:v1.4.0
+        ports: [{containerPort: 8080}]</code></pre>
+      <p class="note">The selector and Pod labels must match exactly.</p>
+    </div>
+  </div>
+
+  <!-- Health endpoints / probes -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Health and lifecycle inside the image</h3>
+      <p>Implement separate endpoints when possible:</p>
+      <ul>
+        <li><code>/livez</code>: process is alive.</li>
+        <li><code>/readyz</code>: able to receive traffic.</li>
+        <li><code>/startupz</code>: slow startup completed.</li>
+      </ul>
+      <p class="note">Do not use a readiness probe to indicate liveness; a temporary dependency failure should usually remove a Pod from traffic, not restart it.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Probes, resources, graceful shutdown</h3>
+      <pre><code>resources:
+  requests: {cpu: "250m", memory: "256Mi"}
+  limits: {cpu: "1", memory: "512Mi"}
+readinessProbe:
+  httpGet: {path: /readyz, port: 8080}
+livenessProbe:
+  httpGet: {path: /livez, port: 8080}
+startupProbe:
+  httpGet: {path: /startupz, port: 8080}</code></pre>
+      <p class="note">Requests influence scheduling; limits cap usage. Missing or unrealistic requests produce poor scheduling and autoscaling behavior.</p>
+    </div>
+  </div>
+
+  <!-- Supply chain / networking -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Reproducibility &amp; supply-chain controls</h3>
+      <ul>
+        <li>Pin base images and dependencies where practical.</li>
+        <li>Scan images for vulnerabilities.</li>
+        <li>Generate and retain SBOMs.</li>
+        <li>Sign and verify images where supported.</li>
+        <li>Deploy by digest for strict immutability.</li>
+        <li>Never bake API keys into an image layer.</li>
+      </ul>
+      <pre><code>docker inspect my-api:v1.4.0</code></pre>
+    </div>
+    <div class="col k8s">
+      <h3>Container networking model</h3>
+      <p>Inside a container, bind the server to <code>0.0.0.0</code>, not only <code>127.0.0.1</code>:</p>
+      <pre><code>app.run(host="0.0.0.0", port=8080)</code></pre>
+      <p class="note">Container port declarations document intent but do not publish traffic by themselves.</p>
+    </div>
+  </div>
+
+  <!-- Service types -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Environment configuration</h3>
+      <p>Use environment variables or mounted files for runtime configuration:</p>
+      <pre><code>docker run --env-file .env my-api:v1.4.0</code></pre>
+      <p class="note">Do not commit <code>.env</code> files. Build-time arguments can leak through image history and should not carry secrets.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Service types</h3>
+      <ul>
+        <li><code>ClusterIP</code>: internal-only virtual IP; default.</li>
+        <li><code>NodePort</code>: exposes a port on nodes; usually an implementation detail.</li>
+        <li><code>LoadBalancer</code>: provisions a cloud load balancer; useful for L4 traffic.</li>
+        <li><code>ExternalName</code>: DNS alias, not a proxy.</li>
+      </ul>
+      <p class="note">For HTTP routing, prefer GKE Ingress or Gateway API rather than one public load balancer per microservice.</p>
+    </div>
+  </div>
+
+  <!-- ConfigMap/Secret & compose/namespace -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Docker Compose vs Kubernetes</h3>
+      <p>Compose is excellent for local multi-container development:</p>
+      <pre><code>services:
+  api:
+    build: .
+    ports: ["8080:8080"]</code></pre>
+      <p class="note">Compose is not a replacement for GKE's scheduling, service discovery, autoscaling, rollout, identity, and cloud load-balancing.</p>
+    </div>
+    <div class="col k8s">
+      <h3>ConfigMap and Secret usage</h3>
+      <pre><code>kubectl create configmap my-api-config \
+  --from-literal=LOG_LEVEL=info
+kubectl create secret generic my-api-secret \
+  --from-literal=API_KEY='REDACTED'</code></pre>
+      <p class="note">For GCP services, prefer Secret Manager plus its integration. Restrict RBAC access and avoid exposing Secret values in logs or manifests.</p>
+    </div>
+  </div>
+
+  <!-- Namespace / debug -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Debug image failures</h3>
+      <pre><code>docker run --rm -it --entrypoint sh IMAGE
+docker history IMAGE
+docker inspect IMAGE</code></pre>
+      <p class="note">Common causes: wrong CPU architecture, missing shared libraries, incorrect working directory, wrong port, file permissions, or a process that exits immediately.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Namespace isolation &amp; debug</h3>
+      <pre><code>kubectl create namespace staging
+kubectl -n staging apply -f k8s/
+
+kubectl describe pod &lt;pod&gt;
+kubectl logs &lt;pod&gt; --previous
+kubectl get events --sort-by=.lastTimestamp
+kubectl top pods</code></pre>
+      <p class="note"><code>Pending</code> → scheduling/resource issues; <code>ImagePullBackOff</code> → image/auth/name problems; <code>CrashLoopBackOff</code> → repeated process failure. Namespaces need RBAC, NetworkPolicies, and quotas for real isolation.</p>
+    </div>
+  </div>
+
+  <!-- Entrypoint / termination -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Entrypoint and command</h3>
+      <p>Exec-form commands receive signals correctly:</p>
+      <pre><code>ENTRYPOINT ["./server"]
+CMD ["--port", "8080"]</code></pre>
+      <p class="note">A shell-form entrypoint can prevent the app from receiving <code>SIGTERM</code>, delaying graceful termination.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Graceful termination</h3>
+      <p class="note">Configure application shutdown handling, a suitable <code>terminationGracePeriodSeconds</code>, and — if needed — a <code>preStop</code> hook. Ensure the app stops accepting new requests before exiting. Rolling updates require old and new versions to coexist safely.</p>
+    </div>
+  </div>
+
+  <!-- Image pull / private registry -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Image pull policy</h3>
+      <p>Use immutable tags or digests. Avoid <code>latest</code> — it makes rollback and auditability difficult.</p>
+      <pre><code>image: .../my-api@sha256:&lt;digest&gt;</code></pre>
+    </div>
+    <div class="col k8s">
+      <h3>Private Artifact Registry access</h3>
+      <p class="note">GKE must be authorized to pull the image. Prefer least-privilege IAM and Google-managed identity mechanisms rather than long-lived registry passwords. Image streaming can reduce startup latency for eligible images.</p>
+    </div>
+  </div>
+
+  <!-- Security baselines -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Docker security baseline</h3>
+      <ul>
+        <li>Non-root <code>USER</code>.</li>
+        <li>Read-only filesystem where possible.</li>
+        <li>Drop Linux capabilities.</li>
+        <li>No privileged mode unless unavoidable.</li>
+        <li>Minimal packages.</li>
+        <li>No host socket mount in untrusted workloads.</li>
+        <li>Treat images as code and scan them continuously.</li>
+      </ul>
+    </div>
+    <div class="col k8s">
+      <h3>GKE identity baseline</h3>
+      <p class="note">Use <strong>Workload Identity Federation for GKE</strong> for Pods accessing Google Cloud APIs. Always enabled in Autopilot; enable it for Standard clusters. Grant IAM permissions to narrowly scoped Kubernetes ServiceAccounts rather than distributing static credentials.</p>
+    </div>
+  </div>
+
+  <!-- Resource behavior / autopilot vs standard -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Docker resource behavior</h3>
+      <p class="note">Local Docker limits are not automatically equivalent to Kubernetes resources. Test memory behavior explicitly, especially for Python, JVM, Node.js, and ML workloads. For GPU workloads, the image must include compatible user-space libraries and the cluster must provide compatible drivers/runtime support.</p>
+    </div>
+    <div class="col k8s">
+      <h3>GKE Autopilot vs Standard</h3>
+      <ul>
+        <li><strong>Autopilot:</strong> Google manages nodes, scaling, and many security/reliability defaults; generally the best starting point.</li>
+        <li><strong>Standard:</strong> you control node pools, machine types, taints, custom node configuration, and specialized infrastructure.</li>
+      </ul>
+      <p class="note">Autopilot still supports customization through supported resource requests, scheduling controls, ComputeClasses, and workload configuration.</p>
+    </div>
+  </div>
+
+  <!-- Parity / autoscaling -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Local-to-cloud parity</h3>
+      <p class="note">Use the same image in local tests, CI, staging, and production. Keep configuration outside the image. Test with the same non-root user and similar CPU/memory assumptions.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Autoscaling layers</h3>
+      <ul>
+        <li><strong>HPA:</strong> adjusts Pod replicas based on CPU, memory, or custom metrics.</li>
+        <li><strong>VPA:</strong> recommends or adjusts requests; understand restart implications.</li>
+        <li><strong>Cluster autoscaler:</strong> adds/removes nodes in Standard clusters.</li>
+        <li>Autopilot provisions underlying compute based on workload requirements.</li>
+      </ul>
+      <p class="note">Set realistic requests before trusting autoscaling.</p>
+    </div>
+  </div>
+
+  <!-- Helm install / lifecycle -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Helm installation and repositories</h3>
+      <pre><code>helm version
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+helm search repo ingress-nginx</code></pre>
+      <p class="note">Helm can also install charts directly from OCI registries using the <code>oci://</code> prefix; adding a classic chart repository is not required for OCI charts.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Helm lifecycle</h3>
+      <pre><code>helm upgrade --install my-api ./charts/my-api \
+  --namespace staging --create-namespace \
+  --values values-staging.yaml \
+  --set image.tag=v1.4.0 \
+  --wait --timeout 10m
+
+helm list -A
+helm status my-api -n staging
+helm history my-api -n staging
+helm rollback my-api 2 -n staging</code></pre>
+      <p class="note"><code>upgrade --install</code> is convenient for idempotent deployments; use explicit chart and image versions in CI.</p>
+    </div>
+  </div>
+
+  <!-- Helm chart structure / validation -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Helm chart structure</h3>
+      <pre><code>my-api/
+├── Chart.yaml
+├── values.yaml
+├── templates/
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   ├── ingress.yaml
+│   ├── serviceaccount.yaml
+│   └── _helpers.tpl
+└── charts/</code></pre>
+      <p class="note"><code>Chart.yaml</code> describes the chart; <code>values.yaml</code> provides defaults; <code>templates/</code> renders Kubernetes manifests.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Helm validation before install</h3>
+      <pre><code>helm lint ./charts/my-api
+helm template my-api ./charts/my-api \
+  -f values-staging.yaml \
+  --set image.tag=v1.4.0
+helm diff upgrade my-api ./charts/my-api \
+  -n staging -f values-staging.yaml</code></pre>
+      <p class="note">Render and review manifests in CI. Never assume a successful Helm command means the application is healthy.</p>
+    </div>
+  </div>
+
+  <!-- Safe values / precedence -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Safe Helm values pattern</h3>
+      <pre><code>image:
+  repository: REGION-docker.pkg.dev/PROJECT/REPO/my-api
+  tag: v1.4.0
+  pullPolicy: IfNotPresent
+replicaCount: 3
+service:
+  type: ClusterIP
+  port: 80
+containerPort: 8080
+resources:
+  requests: {cpu: 250m, memory: 256Mi}
+  limits: {cpu: "1", memory: 512Mi}</code></pre>
+    </div>
+    <div class="col k8s">
+      <h3>Values precedence</h3>
+      <p>Lowest to highest, commonly:</p>
+      <ol>
+        <li>Chart defaults in <code>values.yaml</code>.</li>
+        <li>One or more <code>-f</code> values files, in supplied order.</li>
+        <li><code>--set</code> or <code>--set-string</code> overrides.</li>
+      </ol>
+      <p class="note">Use <code>--set-string</code> for values that must remain strings. Avoid putting secrets in shell history or Git.</p>
+    </div>
+  </div>
+
+  <!-- Promotion -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Container registry promotion</h3>
+      <p class="note">Promote the same immutable image digest through environments rather than rebuilding source separately for staging and production. A rebuild can produce a different artifact even when the source commit is unchanged.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Helm release promotion</h3>
+      <p>Keep environment differences in values files:</p>
+      <pre><code>helm upgrade --install my-api ./charts/my-api \
+  -n prod --create-namespace \
+  -f values-prod.yaml \
+  --set image.digest=sha256:... \
+  --atomic --wait --timeout 15m</code></pre>
+      <p class="note"><code>--atomic</code> rolls back on failure when supported; test hooks, migrations, and rollback behavior before depending on it.</p>
+    </div>
+  </div>
+
+  <!-- CI pipeline / checks -->
+  <div class="row">
+    <div class="col docker">
+      <h3>CI pipeline outline</h3>
+      <pre><code>checkout → test → lint → build → scan → push → deploy</code></pre>
+      <p class="note">Use commit SHA or release version tags, capture the image digest, and pass that digest to deployment. Separate build credentials from runtime credentials.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Kubernetes CI/CD checks</h3>
+      <ul>
+        <li><code>helm lint</code>.</li>
+        <li><code>helm template</code>.</li>
+        <li>Kubernetes schema validation.</li>
+        <li>Policy checks for privileged containers, missing requests, public Services, and unpinned images.</li>
+        <li>Deploy to a disposable or staging namespace.</li>
+        <li>Wait for rollout and run smoke tests.</li>
+        <li>Promote only the verified digest.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Port mapping / external traffic -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Port mapping mental model</h3>
+      <p class="note">Docker:</p>
+      <pre><code>host:8080 → container:8080</code></pre>
+      <p class="note">Kubernetes:</p>
+      <pre><code>Service.port → Service.targetPort → containerPort</code></pre>
+      <p class="note"><code>containerPort</code> is descriptive; <code>targetPort</code> determines where the Service sends traffic.</p>
+    </div>
+    <div class="col k8s">
+      <h3>GKE external traffic</h3>
+      <p class="note">For HTTP(S), GKE Ingress configures an Application Load Balancer from an <code>Ingress</code> and associated <code>Service</code>; Gateway API is the modern alternative for many routing designs. Use Cloud Armor for edge protection and IAP where identity-based application access is required.</p>
+    </div>
+  </div>
+
+  <!-- Persistence / stateful -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Persistent data warning</h3>
+      <p class="note">Containers are ephemeral. Do not store production state only in the writable container layer. Use managed databases, object storage, or Kubernetes persistent volumes backed by suitable GCP storage.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Stateful workloads</h3>
+      <p class="note">Use <code>StatefulSet</code> only when stable identity or ordered storage is required. For many applications, Cloud SQL, Memorystore, Cloud Storage, or another managed service is operationally safer than self-hosting state in Pods. Back up data independently of cluster and Helm release state.</p>
+    </div>
+  </div>
+
+  <!-- Logging / operations -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Logging and observability</h3>
+      <p class="note">Write application logs to stdout/stderr in structured JSON when possible. Include request IDs, trace IDs, severity, and useful context; never include tokens, passwords, or personal data unnecessarily.</p>
+    </div>
+    <div class="col k8s">
+      <h3>GKE operations</h3>
+      <pre><code>kubectl get pods -A
+kubectl get events -A --sort-by=.lastTimestamp
+kubectl logs -f deploy/my-api -n staging
+kubectl port-forward svc/my-api 8080:80 -n staging</code></pre>
+      <p class="note">Use Cloud Logging, Cloud Monitoring, managed Prometheus, dashboards, alerts, and SLOs rather than relying solely on <code>kubectl</code>.</p>
+    </div>
+  </div>
+
+  <!-- Common mistakes -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Common Docker mistakes</h3>
+      <ul>
+        <li>Using <code>latest</code> in production.</li>
+        <li>Running as root unnecessarily.</li>
+        <li>Copying secrets into layers.</li>
+        <li>Installing build tools in the final image.</li>
+        <li>Binding only to localhost.</li>
+        <li>Ignoring signal handling.</li>
+        <li>Assuming local architecture matches GKE nodes.</li>
+        <li>Forgetting <code>.dockerignore</code>.</li>
+      </ul>
+    </div>
+    <div class="col k8s">
+      <h3>Common Kubernetes/Helm mistakes</h3>
+      <ul>
+        <li>Missing resource requests.</li>
+        <li>Selector/label mismatch.</li>
+        <li>Wrong <code>targetPort</code>.</li>
+        <li>Public <code>LoadBalancer</code> when internal access is enough.</li>
+        <li>Hard-coded credentials in values files.</li>
+        <li>No readiness probe.</li>
+        <li>No rollout timeout or rollback plan.</li>
+        <li>Treating Helm rollback as a database rollback.</li>
+        <li>Granting broad IAM or RBAC permissions.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Useful commands -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Useful Docker commands</h3>
+      <pre><code>docker ps
+docker ps -a
+docker image ls
+docker inspect IMAGE
+docker logs CONTAINER
+docker system df
+docker tag SRC DEST
+docker push DEST</code></pre>
+    </div>
+    <div class="col k8s">
+      <h3>Useful Kubernetes commands</h3>
+      <pre><code>kubectl apply -f .
+kubectl get all -n NAMESPACE
+kubectl describe pod POD -n NAMESPACE
+kubectl logs deploy/APP -n NAMESPACE
+kubectl exec -it POD -n NAMESPACE -- sh
+kubectl rollout status deploy/APP -n NAMESPACE
+kubectl delete -f .</code></pre>
+    </div>
+  </div>
+
+  <!-- Production rules -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Production image rule</h3>
+      <p class="note">Build once, test the exact artifact, scan it, push it, and deploy the resulting digest. Treat the image as a versioned release artifact rather than a temporary by-product of CI.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Production GKE rule</h3>
+      <p class="note">Declare everything necessary for recovery in version control — manifests/charts, values, and the pinned image digest — so environments can be reliably recreated and audited.</p>
+    </div>
+  </div>
+
+  <!-- Cloud Build / Binary Authorization -->
+  <div class="row">
+    <div class="col docker">
+      <h3>Build without a Docker daemon (Cloud Build)</h3>
+      <pre><code># Build+push in-cloud, no local Docker needed
+gcloud builds submit --tag \
+  us-central1-docker.pkg.dev/PROJECT/apps/my-api:v1.4.0</code></pre>
+      <p class="note">Useful for CI runners lacking Docker; also enables Buildpacks (<code>--pack</code>).</p>
+    </div>
+    <div class="col k8s">
+      <h3>Binary Authorization (supply-chain gate)</h3>
+      <pre><code># Only allow attested/signed images to deploy to GKE
+gcloud container binauthz policy import policy.yaml</code></pre>
+      <p class="note">Enforcement mechanism that pairs with the SBOM/signing controls — blocks unsigned/unattested images from deploying.</p>
+    </div>
+  </div>
+
+  <!-- Native sidecars / Secret Manager CSI -->
+  <div class="row">
+    <div class="col k8s">
+      <h3>Native sidecars (K8s ≥ 1.29)</h3>
+      <pre><code>initContainers:
+- name: proxy
+  restartPolicy: Always   # makes it a sidecar
+                          # with proper lifecycle</code></pre>
+      <p class="note">A native sidecar starts before app containers and is terminated after them, with correct startup/shutdown ordering.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Secret Manager → GKE via CSI driver</h3>
+      <pre><code># Secrets Store CSI Driver mounts
+# Secret Manager secrets as files
+csi:
+  driver: secrets-store.csi.k8s.io
+  volumeAttributes: { secretProviderClass: "my-spc" }</code></pre>
+      <p class="note">The mechanism behind "prefer Secret Manager": mounts cloud-managed secrets as files instead of storing them in Kubernetes Secrets.</p>
+    </div>
+  </div>
+
+  <!-- PodDisruptionBudget / NetworkPolicy -->
+  <div class="row">
+    <div class="col k8s">
+      <h3>PodDisruptionBudget skeleton</h3>
+      <pre><code>apiVersion: policy/v1
+kind: PodDisruptionBudget
+spec:
+  minAvailable: 2
+  selector: { matchLabels: { app: my-api } }</code></pre>
+      <p class="note">Keeps a minimum number of Pods available during voluntary disruptions (node drains, upgrades, autoscaling).</p>
+    </div>
+    <div class="col k8s">
+      <h3>NetworkPolicy example</h3>
+      <pre><code>apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+spec:
+  podSelector: { matchLabels: { app: my-api } }
+  policyTypes: [Ingress]
+  ingress:
+  - from:
+    - podSelector: { matchLabels: { role: frontend } }</code></pre>
+      <p class="note">Provides the real network isolation that namespaces alone do not; only <code>frontend</code> Pods may reach <code>my-api</code>.</p>
+    </div>
+  </div>
+
+  <!-- Cost / rightsizing & version lifecycle -->
+  <div class="row">
+    <div class="col k8s">
+      <h3>Cost &amp; rightsizing</h3>
+      <ul>
+        <li>Autopilot bills per Pod resource <strong>request</strong> → requests directly drive cost.</li>
+        <li>Use <strong>Spot Pods</strong> for fault-tolerant batch:</li>
+      </ul>
+      <pre><code>nodeSelector:
+  cloud.google.com/gke-spot: "true"</code></pre>
+      <p class="note">Right-size requests before scaling; over-requesting wastes money on Autopilot, under-requesting harms scheduling.</p>
+    </div>
+    <div class="col k8s">
+      <h3>Cluster / version lifecycle</h3>
+      <p class="note">Autopilot always uses <strong>release channels</strong> — pick <code>regular</code> or <code>stable</code>. Plan for GKE auto-upgrades and Kubernetes deprecated-API removals (e.g., <code>Endpoints</code>). Test against upcoming versions before channels roll them out.</p>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Generated from "GCP Docker_K8s_Helm cheat sheet_notes.txt". Validate current GCP/GKE/Helm versions and flags before production use.
+</footer>
+</body>
+</html>

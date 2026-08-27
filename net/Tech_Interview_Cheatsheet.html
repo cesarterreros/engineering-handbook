@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Technical Interview Cheat Sheet</title>
+<style>
+  :root {
+    --accent: #2b6cb0;
+    --accent2: #6b46c1;
+    --accent3: #2f855a;
+    --accent4: #c05621;
+    --bg: #ffffff;
+    --code-bg: #f4f5f7;
+    --border: #d9dee4;
+    --text: #1a202c;
+    --muted: #5a6675;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--text);
+    margin: 0;
+    padding: 18px 22px;
+    background: var(--bg);
+  }
+  h1 {
+    font-size: 20px;
+    margin: 0 0 4px;
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 6px;
+  }
+  .subtitle { color: var(--muted); font-size: 10px; margin-bottom: 14px; }
+  h2 {
+    font-size: 14px;
+    margin: 0 0 8px;
+    padding: 5px 8px;
+    color: #fff;
+    background: var(--accent);
+    border-radius: 4px;
+  }
+  .sec-efcore h2 { background: var(--accent2); }
+  .sec-pg h2 { background: var(--accent3); }
+  .sec-mq h2 { background: var(--accent4); }
+  h3 {
+    font-size: 12px;
+    margin: 0 0 3px;
+    color: var(--accent);
+  }
+  .sec-efcore h3 { color: var(--accent2); }
+  .sec-pg h3 { color: var(--accent3); }
+  .sec-mq h3 { color: var(--accent4); }
+  .columns {
+    column-count: 2;
+    column-gap: 16px;
+  }
+  .card {
+    break-inside: avoid;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    background: #fff;
+  }
+  p { margin: 3px 0; }
+  ul { margin: 3px 0; padding-left: 16px; }
+  li { margin: 2px 0; }
+  code {
+    font-family: "Cascadia Code", Consolas, monospace;
+    background: var(--code-bg);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 10px;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 8px;
+    margin: 4px 0;
+    font-family: "Cascadia Code", Consolas, monospace;
+    font-size: 9.5px;
+    line-height: 1.35;
+    overflow-x: auto;
+    white-space: pre-wrap;
+  }
+  .tag {
+    display: inline-block;
+    font-size: 8.5px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #fff;
+    background: var(--accent);
+    vertical-align: middle;
+  }
+  .good { color: #2f855a; font-weight: 700; }
+  .bad { color: #c53030; font-weight: 700; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 4px 0;
+    font-size: 9.5px;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 3px 5px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: var(--code-bg); }
+  .key { font-weight: 700; color: var(--accent); }
+  section { margin-bottom: 10px; }
+  @media print {
+    body { padding: 0; font-size: 10px; }
+    h2 { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .tag, th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .card { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Technical Interview Cheat Sheet</h1>
+<div class="subtitle">.NET / ASP.NET Core &middot; EF Core &middot; PostgreSQL &mdash; condensed high-value notes (2024/2025)</div>
+
+<!-- ============================ .NET / ASP.NET ============================ -->
+<section class="sec-net">
+<h2>.NET / ASP.NET Core</h2>
+<div class="columns">
+
+  <div class="card">
+    <h3>Unmanaged Resources</h3>
+    <p>Resources the GC doesn't track: file handles, DB connections, sockets, native memory, unmanaged pointers.</p>
+    <ul>
+      <li>Implement <code>IDisposable</code> / <code>IAsyncDisposable</code>; free them in <code>Dispose()</code>.</li>
+      <li>Use <code>using</code> / <code>await using</code> for deterministic cleanup.</li>
+      <li><b>Dispose pattern:</b> <code>Dispose(bool disposing)</code> + <code>GC.SuppressFinalize(this)</code>.</li>
+      <li>A <b>finalizer</b> (<code>~Class()</code>) is a safety net only &mdash; costs an extra GC cycle.</li>
+      <li>Prefer <code>SafeHandle</code> over raw <code>IntPtr</code> for native handles.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>async / await</h3>
+    <ul>
+      <li>Frees the thread during I/O waits &mdash; scalability, <b>not</b> raw speed.</li>
+      <li>Async all the way down; <span class="bad">never</span> <code>.Result</code>/<code>.Wait()</code> &rarr; deadlocks.</li>
+      <li>Return <code>Task</code>/<code>Task&lt;T&gt;</code>; use <code>ValueTask</code> for hot, often-sync paths.</li>
+      <li><code>async void</code> only for event handlers (exceptions can't be caught).</li>
+      <li><code>ConfigureAwait(false)</code> in libraries (no SyncContext in ASP.NET Core anyway).</li>
+      <li>Parallelize independent work: <code>await Task.WhenAll(t1, t2)</code>.</li>
+      <li>Support <code>CancellationToken</code> for cancellation/timeouts.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Middleware vs Action Filters</h3>
+    <table>
+      <tr><th>Middleware</th><th>Action Filter</th></tr>
+      <tr><td>Whole HTTP pipeline</td><td>Only MVC/API actions</td></tr>
+      <tr><td>Runs before routing decided</td><td>After model binding</td></tr>
+      <tr><td>No MVC context (model state)</td><td>Access to args, ModelState, result</td></tr>
+      <tr><td>Cross-cutting: auth, logging, CORS</td><td>Action-specific: validation, caching</td></tr>
+    </table>
+    <p>Order: Middleware &rarr; Routing &rarr; Auth &rarr; Filters (Authorization&rarr;Resource&rarr;Action&rarr;Exception&rarr;Result).</p>
+    <ul>
+      <li><b>Middleware pipeline runs for ALL requests</b> &mdash; app-level concerns: logging, HTTPS redirection, performance profiling, exception handling.</li>
+      <li><b>Filter pipeline is a subset</b> of the middleware pipeline, executing <b>inside the Endpoint Middleware</b>.</li>
+      <li>Filters run <b>only for requests that reach the Endpoint Middleware</b> (a matched action).</li>
+      <li>Filters handle <b>MVC-specific</b> work: <code>ViewData</code>, <code>ViewBag</code>, <code>ModelState</code>, action result.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Global Exception Handling</h3>
+    <ul>
+      <li><b>Modern (.NET 8+):</b> <code>IExceptionHandler</code> + <code>app.UseExceptionHandler()</code>.</li>
+      <li><code>app.UseExceptionHandler("/error")</code> or lambda handler.</li>
+      <li>Return RFC 9457 <b>ProblemDetails</b> (<code>AddProblemDetails()</code>).</li>
+      <li>Alternatives: exception-handling middleware, <code>[ExceptionFilter]</code> (MVC-only).</li>
+      <li>Use <code>UseDeveloperExceptionPage</code> only in Development.</li>
+    </ul>
+    <pre>public class GlobalHandler : IExceptionHandler {
+  public async ValueTask&lt;bool&gt; TryHandleAsync(
+    HttpContext c, Exception e, CancellationToken t){
+    await c.Response.WriteAsJsonAsync(
+      new ProblemDetails{ Title = e.Message }, t);
+    return true; } }</pre>
+  </div>
+
+  <div class="card">
+    <h3>POST vs PUT vs PATCH</h3>
+    <table>
+      <tr><th></th><th>Purpose</th><th>Idempotent</th></tr>
+      <tr><td class="key">POST</td><td>Create / non-idempotent action; server assigns ID</td><td class="bad">No</td></tr>
+      <tr><td class="key">PUT</td><td>Full replace at known URI (create/update)</td><td class="good">Yes</td></tr>
+      <tr><td class="key">PATCH</td><td>Partial update (JSON Patch / merge)</td><td>Usually no</td></tr>
+    </table>
+    <p>Idempotent = same request N times &rarr; same state. GET/PUT/DELETE idempotent; POST/PATCH generally not.</p>
+  </div>
+
+  <div class="card">
+    <h3>Controllers vs Minimal APIs</h3>
+    <table>
+      <tr><th>Controllers</th><th>Minimal APIs</th></tr>
+      <tr><td>Convention, attributes, filters</td><td>Lambda endpoints, low ceremony</td></tr>
+      <tr><td>Full filter pipeline, model binding</td><td>Endpoint filters (.NET 7+)</td></tr>
+      <tr><td>Better for large/complex APIs</td><td>Fast, microservices, high perf</td></tr>
+    </table>
+    <p>Minimal API perf gap has narrowed; both share routing, DI, auth. Choose by team/complexity.</p>
+    <p><b>Minimal APIs:</b></p>
+    <ul>
+      <li><b>Cloud-native</b> &mdash; designed for containers, serverless functions &amp; microservices.</li>
+      <li>Build <b>HTTP services only</b> &mdash; no support for MVC Views.</li>
+      <li><b>Endpoint Filters</b> instead of MVC filters.</li>
+      <li>Reduce <b>memory allocations per request</b>.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Captive Dependencies</h3>
+    <p>A <b>longer-lived service captures a shorter-lived one</b>, extending its lifetime unintentionally.</p>
+    <ul>
+      <li>Classic bug: <span class="bad">Singleton injects Scoped</span> (e.g. DbContext) &rarr; stale/thread-unsafe.</li>
+      <li>Rule: never inject a shorter lifetime into a longer one.</li>
+      <li>Fixes: inject <code>IServiceScopeFactory</code> and create a scope, or use a factory.</li>
+      <li>Validated at startup by default in Dev (<code>ValidateScopes</code>).</li>
+    </ul>
+    <p>Lifetimes: <b>Transient</b> (each request), <b>Scoped</b> (per HTTP request), <b>Singleton</b> (app lifetime).</p>
+  </div>
+
+  <div class="card">
+    <h3>JWT</h3>
+    <p>JSON Web Token = <code>header.payload.signature</code> (Base64Url), stateless bearer token.</p>
+    <ul>
+      <li><b>Header:</b> alg (HS256/RS256), typ. <b>Payload:</b> claims (sub, exp, iss, aud, roles).</li>
+      <li><b>Signature:</b> verifies integrity &mdash; <b>not encrypted</b>, don't store secrets.</li>
+      <li>Always validate <code>issuer</code>, <code>audience</code>, <code>expiry</code>, <code>signature</code>.</li>
+      <li>Short-lived access token + long-lived <b>refresh token</b>; revocation is hard (stateless).</li>
+      <li>Prefer RS256 (asymmetric) for multi-service; store client-side in httpOnly cookie or memory.</li>
+    </ul>
+    <pre>builder.Services.AddAuthentication().AddJwtBearer(o =&gt;
+  o.TokenValidationParameters = new(){
+    ValidateIssuer=true, ValidateAudience=true,
+    ValidateLifetime=true, ValidateIssuerSigningKey=true });</pre>
+  </div>
+
+  <div class="card">
+    <h3>XSS &middot; CSRF &middot; CORS &middot; SQL Injection</h3>
+    <p><span class="tag">XSS</span> Cross Site Scripting &mdash; Inject malicious script into page.
+      <b>Fix:</b> encode/escape output, CSP header, avoid <code>innerHTML</code>, Razor auto-encodes.</p>
+    <p><span class="tag">CSRF</span> Cross Site Request Forgery &mdash; Forged request using victim's cookies.
+      <b>Fix:</b> anti-forgery token (<code>[ValidateAntiForgeryToken]</code>), SameSite cookies, don't use cookies for pure APIs (use bearer).</p>
+    <p><span class="tag">CORS</span>  Cross Origin Resource Sharing &mdash; Browser same-origin policy control (a defense, not an attack).
+      <b>Config:</b> <code>AddCors</code> + <code>UseCors</code>; allow specific origins, avoid <code>AllowAnyOrigin</code>+credentials.</p>
+    <p><span class="tag">SQLi</span> Injected SQL via input.
+      <b>Fix:</b> parameterized queries / EF Core (never string concat), least-privilege DB user, validate input.</p>
+  </div>
+
+</div>
+</section>
+
+<!-- ============================ EF CORE ============================ -->
+<section class="sec-efcore">
+<h2>EF Core</h2>
+<div class="columns">
+
+  <div class="card">
+    <h3>Eager vs Lazy vs Explicit Loading</h3>
+    <table>
+      <tr><th>Type</th><th>How</th><th>Queries</th></tr>
+      <tr><td class="key">Eager</td><td><code>.Include()</code>/<code>.ThenInclude()</code></td><td>1 (JOINs)</td></tr>
+      <tr><td class="key">Explicit</td><td><code>ctx.Entry(e).Reference/Collection.Load()</code></td><td>On demand</td></tr>
+      <tr><td class="key">Lazy</td><td>virtual navs + proxies pkg</td><td>1 per access</td></tr>
+    </table>
+    <ul>
+      <li>Eager = predictable, best default. Lazy convenient but hides N+1.</li>
+      <li><code>AsSplitQuery()</code> avoids cartesian explosion on multiple Includes.</li>
+      <li>Read-only? add <code>AsNoTracking()</code> for speed.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>The N+1 Problem</h3>
+    <p>1 query for the list + N queries for each item's related data.</p>
+    <pre>// BAD: lazy loading in a loop -&gt; 1 + N
+foreach (var o in ctx.Orders)
+  Console.Write(o.Customer.Name);
+// GOOD: 1 query
+ctx.Orders.Include(o =&gt; o.Customer)</pre>
+    <ul>
+      <li>Cause: lazy loading or accessing navs per row.</li>
+      <li>Fix: <code>Include</code>, projection (<code>Select</code>), or split query.</li>
+      <li>Detect: EF Core logs a warning; inspect generated SQL.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Optimistic Concurrency</h3>
+    <p>Assume conflicts are rare; detect on save instead of locking.</p>
+    <ul>
+      <li>Add concurrency token: <code>[Timestamp] byte[] RowVersion</code> or <code>.IsConcurrencyToken()</code>.</li>
+      <li>PostgreSQL: use <code>xmin</code> system column &rarr; <code>.UseXminAsConcurrencyToken()</code>.</li>
+      <li>UPDATE includes token in WHERE; 0 rows &rarr; <code>DbUpdateConcurrencyException</code>.</li>
+      <li>Resolve: reload DB values, merge, retry (client-wins / store-wins).</li>
+    </ul>
+    <p><b>Pessimistic</b> = DB locks (<code>FOR UPDATE</code>); EF has no first-class support.</p>
+  </div>
+
+  <div class="card">
+    <h3>Global Query Filters</h3>
+    <p>Predicate auto-applied to every query for an entity (LINQ WHERE).</p>
+    <pre>modelBuilder.Entity&lt;Post&gt;()
+  .HasQueryFilter(p =&gt; !p.IsDeleted
+     &amp;&amp; p.TenantId == _tenantId);</pre>
+    <ul>
+      <li>Great for <b>soft delete</b> and <b>multitenancy</b>.</li>
+      <li>Bypass with <code>.IgnoreQueryFilters()</code>.</li>
+      <li>.NET 10: named filters allow multiple/selective bypass.</li>
+      <li>Applies to root; watch required navigations &amp; Includes.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Migrations</h3>
+    <p>Version-controlled, incremental schema changes from your model.</p>
+    <pre>dotnet ef migrations add Init
+dotnet ef database update
+dotnet ef migrations remove   // undo last (if not applied)
+dotnet ef migrations script   // SQL for prod</pre>
+    <ul>
+      <li>Each migration = <code>Up()</code> / <code>Down()</code> + model snapshot.</li>
+      <li>Prod: generate idempotent SQL scripts, review before applying.</li>
+      <li>Never edit applied migrations; add a new one.</li>
+      <li><code>__EFMigrationsHistory</code> table tracks what's applied.</li>
+    </ul>
+  </div>
+
+</div>
+</section>
+
+<!-- ============================ POSTGRESQL ============================ -->
+<section class="sec-pg">
+<h2>PostgreSQL</h2>
+<div class="columns">
+
+  <div class="card">
+    <h3>Multitenancy</h3>
+    <table>
+      <tr><th>Model</th><th>Isolation</th><th>Cost/Ops</th></tr>
+      <tr><td>DB per tenant</td><td>Highest</td><td>Expensive</td></tr>
+      <tr><td>Schema per tenant</td><td>Medium</td><td>Moderate</td></tr>
+      <tr><td>Shared table + TenantId</td><td>Lowest</td><td>Cheapest</td></tr>
+    </table>
+    <ul>
+      <li>Shared schema: enforce with EF <b>global query filter</b> on <code>TenantId</code>.</li>
+      <li>Postgres <b>Row-Level Security (RLS)</b> enforces at DB level regardless of app bugs.</li>
+      <li>Index on <code>TenantId</code>; beware cross-tenant leaks &amp; noisy neighbors.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Row-Level Security (RLS)</h3>
+    <p>Attach <b>policies</b> that auto-filter rows by <b>who is querying</b>. With a session setting like <code>current_setting('app.current_tenant')</code>, enforce tenant isolation at the <b>DB level</b> &mdash; no need to add <code>WHERE tenant_id = ?</code> to every query.</p>
+    <pre>CREATE POLICY tenant_isolation_policy ON your_table
+  FOR ALL
+  USING (tenant_id =
+    current_setting('app.current_tenant')::bigint);</pre>
+    <p>&rArr; For any SELECT/UPDATE/DELETE, only rows where <code>tenant_id</code> matches the session's <code>app.current_tenant</code>.</p>
+    <p>In your app, before querying on that connection:</p>
+    <pre>SET LOCAL app.current_tenant = '123';</pre>
+    <ul>
+      <li><code>SET LOCAL</code> applies <b>only for the current transaction</b> (ideal for web requests).</li>
+      <li>All later queries on that connection auto-see only tenant 123's rows.</li>
+      <li>With pooled connections, <b>reset per transaction</b> &mdash; use <code>SET LOCAL</code> inside a txn, not plain <code>SET</code>.</li>
+      <li>Must also <code>ENABLE ROW LEVEL SECURITY</code> on the table for policies to apply.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>SQL Constraints</h3>
+    <ul>
+      <li><span class="key">PRIMARY KEY</span> unique + not null, identifies row.</li>
+      <li><span class="key">FOREIGN KEY</span> referential integrity (ON DELETE CASCADE/SET NULL/RESTRICT).</li>
+      <li><span class="key">UNIQUE</span> no duplicate values (allows one NULL in PG).</li>
+      <li><span class="key">NOT NULL</span> value required.</li>
+      <li><span class="key">CHECK</span> custom boolean rule, e.g. <code>price &gt; 0</code>.</li>
+      <li><span class="key">DEFAULT</span> value when none supplied.</li>
+      <li><span class="key">EXCLUDE</span> (PG-specific) e.g. no overlapping ranges.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Clustered vs Non-Clustered Index</h3>
+    <ul>
+      <li><b>Clustered:</b> table rows physically ordered by key; <b>one</b> per table.</li>
+      <li><b>Non-clustered:</b> separate structure with pointers; <b>many</b> allowed.</li>
+      <li><span class="bad">PostgreSQL has no permanent clustered index</span> &mdash; heap storage.
+        <code>CLUSTER table USING idx</code> is a <b>one-time</b> reorder (not maintained).</li>
+      <li>All PG indexes are effectively "non-clustered" (B-tree by default; also GIN, GiST, BRIN, Hash).</li>
+      <li>PK creates a unique B-tree index, not a clustered store.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Relationships (Cardinality)</h3>
+    <ul>
+      <li><b>1-to-1:</b> FK with UNIQUE on child (or shared PK). E.g. User&ndash;Profile.</li>
+      <li><b>1-to-many:</b> FK on the "many" side. E.g. Customer&ndash;Orders.</li>
+      <li><b>many-to-many:</b> <b>junction/join table</b> with two FKs (composite PK). E.g. Student&ndash;Course &rarr; Enrollment.</li>
+    </ul>
+    <p>EF Core: 1-1 <code>HasOne/WithOne</code>, 1-m <code>HasOne/WithMany</code>, m-m auto join entity (EF5+) <code>HasMany/WithMany</code>.</p>
+  </div>
+
+  <div class="card">
+    <h3>Isolation Levels</h3>
+    <table>
+      <tr><th>Level</th><th>Dirty</th><th>Non-repeat</th><th>Phantom</th></tr>
+      <tr><td>Read Uncommitted</td><td>&mdash;*</td><td>Yes</td><td>Yes</td></tr>
+      <tr><td>Read Committed</td><td>No</td><td>Yes</td><td>Yes</td></tr>
+      <tr><td>Repeatable Read</td><td>No</td><td>No</td><td>No*</td></tr>
+      <tr><td>Serializable</td><td>No</td><td>No</td><td>No</td></tr>
+    </table>
+    <ul>
+      <li><b>PG default = Read Committed.</b> *PG treats Read Uncommitted as Read Committed (no dirty reads ever).</li>
+      <li>PG uses <b>MVCC</b> (snapshots), not read locks.</li>
+      <li>PG <b>Repeatable Read</b> also prevents phantoms; may throw serialization errors &rarr; retry.</li>
+      <li><b>Serializable</b> = strongest (SSI); may abort txns needing retry.</li>
+    </ul>
+    <p><b>Anomalies:</b> Dirty read (uncommitted data), Non-repeatable read (row changed on re-read), Phantom (new rows match on re-query).</p>
+  </div>
+
+</div>
+</section>
+
+<!-- ============================ RabbitMQ ============================ -->
+<section class="sec-mq">
+<h2>RabbitMQ (for .NET developers)</h2>
+<div class="columns">
+
+  <div class="card">
+    <h3>Core Model (AMQP 0-9-1)</h3>
+    <p><b>Producer</b> &rarr; <b>Exchange</b> &rarr; (binding) &rarr; <b>Queue</b> &rarr; <b>Consumer</b>. Producers <b>never</b> publish directly to a queue.</p>
+    <ul>
+      <li><b>Exchange</b> routes messages using a <b>routing key</b> + <b>bindings</b>.</li>
+      <li><b>Queue</b> = durable buffer holding messages until acked.</li>
+      <li><b>Binding</b> = rule linking exchange &rarr; queue.</li>
+      <li><b>Channel</b> = lightweight virtual connection; do work on channels, <span class="bad">not</span> raw TCP connections.</li>
+      <li><b>Vhost</b> = logical isolation (separate exchanges/queues/permissions).</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Exchange Types</h3>
+    <table>
+      <tr><th>Type</th><th>Routing</th><th>Use</th></tr>
+      <tr><td class="key">direct</td><td>Exact routing-key match</td><td>Point-to-point, log levels</td></tr>
+      <tr><td class="key">topic</td><td>Pattern <code>*</code>=1 word <code>#</code>=0+ words</td><td>Category routing <code>order.*.eu</code></td></tr>
+      <tr><td class="key">fanout</td><td>Broadcast to all bound queues (ignores key)</td><td>Pub/sub, cache invalidation</td></tr>
+      <tr><td class="key">headers</td><td>Match on header args (not key)</td><td>Complex multi-attr routing</td></tr>
+    </table>
+    <p>Default (nameless <code>""</code>) exchange is a <b>direct</b> exchange; routing key = queue name.</p>
+  </div>
+
+  <div class="card">
+    <h3>Reliability: Acks &amp; Confirms</h3>
+    <ul>
+      <li><b>Consumer ack</b>: use <b>manual</b> ack (<code>autoAck:false</code>) &mdash; ack <b>after</b> successful processing.</li>
+      <li><code>BasicAckAsync</code> (success), <code>BasicNackAsync</code>/<code>BasicRejectAsync</code> with <code>requeue</code> flag.</li>
+      <li><b>Publisher confirms</b>: broker acks the producer &mdash; the only safe way to know a message was persisted.</li>
+      <li><b>Durable</b> queue + <b>persistent</b> message (<code>Persistent=true</code>) survive broker restart. Both required.</li>
+      <li><span class="bad">Gotcha:</span> durable queue with non-persistent messages still loses messages on restart.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>.NET Client (v7+, async)</h3>
+    <p>NuGet <code>RabbitMQ.Client</code> 7.x is <b>fully async</b> (<code>CreateConnectionAsync</code>, <code>BasicPublishAsync</code>).</p>
+    <pre>var factory = new ConnectionFactory { HostName = "localhost" };
+await using var conn = await factory.CreateConnectionAsync();
+await using var ch = await conn.CreateChannelAsync();
+await ch.QueueDeclareAsync("orders", durable:true,
+    exclusive:false, autoDelete:false);
+var body = JsonSerializer.SerializeToUtf8Bytes(order);
+var props = new BasicProperties { Persistent = true };
+await ch.BasicPublishAsync("", "orders",
+    mandatory:false, props, body);</pre>
+    <ul>
+      <li>Reuse ONE connection; create a <b>channel per thread/consumer</b> (not thread-safe to share).</li>
+      <li>Consumer: <code>AsyncEventingBasicConsumer</code> + <code>BasicConsumeAsync</code>.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Throughput &amp; Fair Dispatch</h3>
+    <ul>
+      <li><b>Prefetch</b> (<code>BasicQosAsync(0, prefetchCount, false)</code>) caps unacked messages per consumer &rarr; fair dispatch, prevents one worker hoarding.</li>
+      <li>Low prefetch (1&ndash;10) = even load; high prefetch = more throughput but risk of imbalance.</li>
+      <li>Scale out with <b>competing consumers</b> on the same queue (work queue pattern).</li>
+      <li>Order is preserved <b>per queue with a single consumer</b> only.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>DLX, TTL &amp; Retries</h3>
+    <ul>
+      <li><b>Dead Letter Exchange</b>: messages rejected/nacked (requeue=false), expired (TTL), or over max-length go to the DLX.</li>
+      <li>Set via args: <code>x-dead-letter-exchange</code>, <code>x-message-ttl</code>, <code>x-max-length</code>.</li>
+      <li><b>Retry pattern:</b> DLX &rarr; retry queue with TTL &rarr; dead-letters back to main queue (delayed retry). No native delay without the <b>delayed-message</b> plugin.</li>
+      <li>Track <code>x-death</code> header to cap retry attempts &rarr; park in a <b>parking/poison</b> queue.</li>
+      <li><span class="bad">Avoid</span> blind <code>requeue:true</code> on failures &rarr; infinite hot-loop.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Quorum Queues (default choice)</h3>
+    <ul>
+      <li><b>Quorum queues</b> (Raft-based) are the modern default for HA &mdash; replicated across nodes, consistent, durable.</li>
+      <li>Classic mirrored queues are <b>deprecated/removed</b> (RabbitMQ 4.x). Use quorum instead.</li>
+      <li>Support <b>poison-message handling</b> via <code>x-delivery-limit</code>.</li>
+      <li><b>Streams</b>: append-only log (replayable, high-throughput, Kafka-like) for large fan-out / replay scenarios.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>RabbitMQ vs Kafka</h3>
+    <table>
+      <tr><th>RabbitMQ</th><th>Kafka</th></tr>
+      <tr><td>Smart broker / routing</td><td>Dumb broker / smart consumer</td></tr>
+      <tr><td>Message deleted after ack</td><td>Retained log, replayable by offset</td></tr>
+      <tr><td>Complex routing, task queues, RPC</td><td>Event streaming, high throughput</td></tr>
+      <tr><td>Push to consumers</td><td>Consumers pull</td></tr>
+    </table>
+    <p>Pick <b>RabbitMQ</b> for flexible routing, work queues, per-message ack; <b>Kafka</b> for replay &amp; huge throughput.</p>
+  </div>
+
+  <div class="card">
+    <h3>Patterns &amp; Best Practices</h3>
+    <ul>
+      <li>Ensure <b>idempotent</b> consumers &mdash; delivery is <b>at-least-once</b>; duplicates happen (dedupe by message id).</li>
+      <li>Use the <b>transactional outbox</b> to publish reliably with a DB commit (avoid dual-write loss).</li>
+      <li>Set <code>MessageId</code>, <code>CorrelationId</code>, <code>ContentType</code> on <code>BasicProperties</code>.</li>
+      <li><b>RPC</b>: <code>ReplyTo</code> + <code>CorrelationId</code>, use built-in <code>amq.rabbitmq.reply-to</code> (direct reply-to).</li>
+      <li>Prefer higher-level frameworks: <b>MassTransit</b> or <b>EasyNetQ</b> for retries, sagas, serialization.</li>
+      <li>Handle reconnects: enable <code>AutomaticRecoveryEnabled</code> (on by default) + topology recovery.</li>
+    </ul>
+  </div>
+
+</div>
+</section>
+
+</body>
+</html>
