@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My B1+ → B2 English Study Sheet · Software &amp; AI Engineer</title>
+<style>
+  :root{
+    --ink:#1a1f2b;
+    --muted:#5a6472;
+    --line:#d3d9e2;
+    --grammar:#2563a8;   /* blue   */
+    --vocab:#0f7a5a;     /* green  */
+    --phrase:#8a4bc9;    /* purple */
+    --link:#b26b00;      /* amber  */
+    --mistake:#c0392b;   /* red    */
+    --phrasal:#0e6f78;   /* teal   */
+    --priority:#d98200;  /* gold accent for priority */
+    --ok:#1c7a3e;
+    --bad:#b3261e;
+    --bg-soft:#f5f7fa;
+    --gold-soft:#fff7e8;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+
+  body{
+    font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;
+    color:var(--ink);
+    font-size:9.2px;
+    line-height:1.32;
+    background:#e9edf2;
+  }
+
+  /* ---- Page frame ---- */
+  .page{
+    background:#fff;
+    width:210mm;
+    min-height:297mm;
+    margin:8px auto;
+    padding:9mm 8mm;
+    box-shadow:0 1px 6px rgba(0,0,0,.18);
+  }
+
+  /* ---- Masthead ---- */
+  .masthead{
+    border-bottom:2.5px solid var(--ink);
+    padding-bottom:5px;
+    margin-bottom:6px;
+  }
+  .masthead h1{ font-size:16px; margin:0 0 2px 0; letter-spacing:.2px; }
+  .masthead .sub{
+    font-size:9px; color:var(--muted);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px;
+  }
+  .masthead .sub b{ color:var(--ink); }
+
+  /* ---- Assessment snapshot banner ---- */
+  .snapshot{
+    display:flex; gap:6px; flex-wrap:wrap;
+    background:var(--gold-soft);
+    border:1px solid var(--priority);
+    border-radius:5px;
+    padding:5px 7px;
+    margin-bottom:8px;
+    font-size:8.7px;
+  }
+  .snapshot .chip{
+    background:#fff; border:1px solid var(--line); border-radius:10px;
+    padding:1px 7px; font-weight:600;
+  }
+  .snapshot .lvl{ background:var(--priority); color:#fff; border-color:var(--priority); }
+  .snapshot .goal{ margin-left:auto; font-style:italic; color:var(--muted); }
+
+  /* ---- Multi-column flow ---- */
+  .cols{ column-count:2; column-gap:7mm; column-fill:balance; }
+  @media screen and (max-width:820px){ .cols{ column-count:1; } .page{ width:auto; } }
+
+  /* ---- Section block ---- */
+  section{
+    break-inside:avoid; -webkit-column-break-inside:avoid; page-break-inside:avoid;
+    margin:0 0 8px 0; border:1px solid var(--line);
+    border-radius:5px; overflow:hidden; background:#fff;
+  }
+  .sec-head{
+    color:#fff; padding:3px 7px; font-size:10.3px; font-weight:700;
+    letter-spacing:.2px; display:flex; align-items:center; gap:5px;
+  }
+  .sec-head .n{
+    background:rgba(255,255,255,.28); border-radius:3px;
+    padding:0 5px; font-size:9.3px;
+  }
+  .sec-head .flag{
+    margin-left:auto; background:#fff; color:var(--priority);
+    font-size:7.8px; font-weight:800; padding:1px 6px; border-radius:9px;
+    letter-spacing:.2px; white-space:nowrap;
+  }
+  .sec-body{ padding:5px 7px 6px; }
+
+  /* color coding */
+  .c-grammar .sec-head{ background:var(--grammar); } .c-grammar{ border-color:var(--grammar); }
+  .c-vocab   .sec-head{ background:var(--vocab); }   .c-vocab{ border-color:var(--vocab); }
+  .c-phrase  .sec-head{ background:var(--phrase); }  .c-phrase{ border-color:var(--phrase); }
+  .c-link    .sec-head{ background:var(--link); }    .c-link{ border-color:var(--link); }
+  .c-mistake .sec-head{ background:var(--mistake); } .c-mistake{ border-color:var(--mistake); }
+  .c-phrasal .sec-head{ background:var(--phrasal); } .c-phrasal{ border-color:var(--phrasal); }
+
+  /* priority emphasis: gold top bar + tinted body */
+  .priority{ border-width:2px; border-color:var(--priority); box-shadow:0 0 0 2px var(--gold-soft) inset; }
+  .priority .sec-body{ background:var(--gold-soft); }
+
+  /* sub-group label */
+  .grp{
+    font-size:8.6px; font-weight:700; text-transform:uppercase; letter-spacing:.4px;
+    color:var(--muted); margin:6px 0 2px; padding-bottom:1px; border-bottom:1px dotted var(--line);
+  }
+  .grp:first-child{ margin-top:0; }
+
+  /* ---- Tables ---- */
+  table{ width:100%; border-collapse:collapse; margin:2px 0 3px; font-size:8.9px; }
+  th,td{ text-align:left; padding:2.4px 4px; vertical-align:top; border-bottom:1px solid #e7ebf1; }
+  th{
+    background:var(--bg-soft); font-size:8.2px; text-transform:uppercase;
+    letter-spacing:.3px; color:var(--muted); border-bottom:1px solid var(--line);
+  }
+  .priority th{ background:#fdeecf; }
+  tr:last-child td{ border-bottom:none; }
+  .pat{ font-weight:700; color:var(--grammar); white-space:nowrap; }
+
+  /* item list */
+  .item{ margin:0 0 3px; }
+  .item .t{ font-weight:700; }
+  .item .ex{
+    display:block; color:var(--ink); background:#fff;
+    border-left:2.5px solid var(--line); padding:1.5px 5px; margin-top:1px; border-radius:0 3px 3px 0;
+  }
+  .item .ex::before{ content:"› "; color:var(--muted); }
+
+  code,.mono{
+    font-family:"Consolas","SF Mono",Menlo,monospace; background:#eef1f5;
+    padding:0 2px; border-radius:2px; font-size:8.4px;
+  }
+  .note{ color:var(--muted); font-style:italic; }
+  ul.tight{ margin:2px 0 3px; padding-left:14px; }
+  ul.tight li{ margin:1px 0; }
+  .bad-cell{ color:var(--bad); } .ok-cell{ color:var(--ok); font-weight:600; }
+
+  /* personalized mistake callout */
+  .mine{
+    background:#fff; border:1px dashed var(--mistake); border-radius:4px;
+    padding:3px 6px; margin:3px 0; font-size:8.8px;
+  }
+  .mine .lab{ font-size:7.6px; font-weight:800; color:var(--mistake); letter-spacing:.3px; text-transform:uppercase; }
+  .mine .x{ color:var(--bad); } .mine .x b{ text-decoration:line-through; }
+  .mine .v{ color:var(--ok); font-weight:600; }
+  .mine .arw{ color:var(--muted); padding:0 3px; }
+
+  .drill{
+    background:#fff; border:1px solid var(--line); border-radius:4px;
+    padding:4px 6px; margin-top:3px; font-size:8.7px;
+  }
+  .drill .q{ display:block; margin:1px 0; }
+  .drill .ans{ color:var(--ok); font-weight:600; }
+
+  .footer{
+    margin-top:6px; border-top:1px solid var(--line); padding-top:4px;
+    font-size:8px; color:var(--muted); display:flex; justify-content:space-between;
+  }
+
+  /* ---- Print ---- */
+  @page{ size:A4; margin:9mm; }
+  @media print{
+    body{ background:#fff; font-size:9px; }
+    .page{ box-shadow:none; margin:0; width:auto; min-height:0; padding:0; }
+    section{ box-shadow:none; }
+    .sec-head,.snapshot,.priority,th,.item .ex,code,.mine{
+      -webkit-print-color-adjust:exact; print-color-adjust:exact;
+    }
+    .no-print{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="masthead">
+    <h1>My B1+ → B2 English Study Sheet</h1>
+    <div class="sub">
+      <span><b>Personalized for:</b> a Software / AI Engineer (US client, standups, requirements, mentoring)</span>
+      <span><b>🎯 = my priority gap</b></span>
+    </div>
+  </div>
+
+  <div class="snapshot">
+    <span class="chip lvl">Overall: B1+</span>
+    <span class="chip">Discourse: B1+ ✔ strength</span>
+    <span class="chip">Lexical: B1+</span>
+    <span class="chip">Grammar: B1 ⚑ focus</span>
+    <span class="goal">Path to B2: verb patterns · articles · agreement · richer connectors · finishing sentences</span>
+  </div>
+
+  <div class="cols">
+
+    <!-- ============ PRIORITY 1: VERB PATTERNS ============ -->
+    <section class="c-grammar priority">
+      <div class="sec-head"><span class="n">1</span> Verb Patterns: Gerund vs. Infinitive <span class="flag">🎯 Priority #1</span></div>
+      <div class="sec-body">
+
+        <div class="mine">
+          <span class="lab">My assessment mistake</span><br>
+          <span class="x">"I prefer <b>learn</b> online"</span>
+          <span class="arw">→</span>
+          <span class="v">"I prefer <u>learning</u> online" / "I prefer <u>to learn</u> online"</span>
+        </div>
+
+        <div class="grp">Keep this list — verb + which form?</div>
+        <table>
+          <tr><th>Verb</th><th>Pattern</th><th>Tech example</th></tr>
+          <tr><td>enjoy</td><td class="pat">+ -ing</td><td>I <b>enjoy building</b> APIs.</td></tr>
+          <tr><td>avoid</td><td class="pat">+ -ing</td><td>We <b>avoid coupling</b> the modules.</td></tr>
+          <tr><td>suggest</td><td class="pat">+ -ing</td><td>He <b>suggested caching</b> the results.</td></tr>
+          <tr><td>recommend</td><td class="pat">+ -ing</td><td>I'd <b>recommend refactoring</b> this first.</td></tr>
+          <tr><td>consider</td><td class="pat">+ -ing</td><td>We're <b>considering migrating</b> to Postgres.</td></tr>
+          <tr><td>keep</td><td class="pat">+ -ing</td><td>The job <b>keeps failing</b> on retry.</td></tr>
+          <tr><td>finish</td><td class="pat">+ -ing</td><td>I <b>finished reviewing</b> the PR.</td></tr>
+          <tr><td>need</td><td class="pat">+ to</td><td>We <b>need to deploy</b> before noon.</td></tr>
+          <tr><td>want</td><td class="pat">+ to</td><td>I <b>want to test</b> the edge case.</td></tr>
+          <tr><td>decide</td><td class="pat">+ to</td><td>We <b>decided to rewrite</b> the service.</td></tr>
+          <tr><td>manage</td><td class="pat">+ to</td><td>I <b>managed to reproduce</b> the bug.</td></tr>
+          <tr><td>plan</td><td class="pat">+ to</td><td>We <b>plan to release</b> on Friday.</td></tr>
+          <tr><td>prefer</td><td class="pat">+ -ing / to</td><td>I <b>prefer pairing</b> / <b>prefer to pair</b>.</td></tr>
+          <tr><td>look&nbsp;forward&nbsp;to</td><td class="pat">+ -ing</td><td>I <b>look forward to hearing</b> back.</td></tr>
+        </table>
+        <p class="note" style="margin:2px 0 0;"><b>Trap:</b> <code>to</code> in "look forward <b>to</b>" is a preposition → always <b>-ing</b>, never "to hear".</p>
+      </div>
+    </section>
+
+    <!-- ============ PRIORITY 2: ARTICLES ============ -->
+    <section class="c-grammar priority">
+      <div class="sec-head"><span class="n">2</span> Articles: a / an / the <span class="flag">🎯 Priority</span></div>
+      <div class="sec-body">
+
+        <div class="mine">
+          <span class="lab">My assessment mistake</span><br>
+          <span class="x">"I used to be <b>engineer</b>"</span>
+          <span class="arw">→</span>
+          <span class="v">"I used to be <u>an</u> engineer"</span>
+        </div>
+
+        <div class="grp">Quick rules</div>
+        <ul class="tight">
+          <li><b>Jobs / roles</b> → always <code>a/an</code>: <i>I'm <b>a</b> developer</i>, <i>She's <b>an</b> architect</i>.</li>
+          <li><b>a</b> before consonant sound, <b>an</b> before vowel sound: <i><b>a</b> URL, <b>a</b> user, <b>an</b> API, <b>an</b> hour</i>.</li>
+          <li><b>the</b> = specific/already mentioned: <i>Fix <b>the</b> bug we found.</i></li>
+          <li><b>No article</b> = general plural / uncountable: <i>I write <b>tests</b></i>, <i>We store <b>data</b></i>.</li>
+          <li>First mention <code>a</code>, later <code>the</code>: <i>I opened <b>a</b> ticket; <b>the</b> ticket is now closed.</i></li>
+        </ul>
+
+        <div class="grp">Mini-drill — add the missing article</div>
+        <div class="drill">
+          <span class="q">1. "I'm ___ AI engineer." <span class="ans">→ an</span></span>
+          <span class="q">2. "We hit ___ edge case in ___ parser." <span class="ans">→ an / the</span></span>
+          <span class="q">3. "Can you review ___ PR I opened?" <span class="ans">→ the</span></span>
+          <span class="q">4. "This is ___ one-off script." <span class="ans">→ a (sound = "wun")</span></span>
+          <span class="q">5. "She gave ___ great demo." <span class="ans">→ a</span></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PRIORITY 3: SUBJECT-VERB AGREEMENT ============ -->
+    <section class="c-grammar priority">
+      <div class="sec-head"><span class="n">3</span> Subject–Verb Agreement &amp; Phrasing <span class="flag">🎯 Priority</span></div>
+      <div class="sec-body">
+
+        <div class="mine">
+          <span class="lab">My assessment mistake</span><br>
+          <span class="x">"we should have some good skills <b>about how to learn</b> quickly"</span>
+          <span class="arw">→</span>
+          <span class="v">"we should have good skills <u>in / at learning</u> quickly"</span>
+          <p class="note" style="margin:1px 0 0;">skills <b>in / at + -ing</b>, not "skills about how to…"</p>
+        </div>
+
+        <div class="grp">Agreement watch-list</div>
+        <table>
+          <tr><th class="bad-cell">✗ Watch out</th><th class="ok-cell">✓ Correct</th></tr>
+          <tr><td class="bad-cell">The data <b>are</b> ready (spoken)</td><td class="ok-cell">The data <b>is</b> ready <span class="note">(treat as uncountable)</span></td></tr>
+          <tr><td class="bad-cell">People <b>is</b> waiting</td><td class="ok-cell">People <b>are</b> waiting</td></tr>
+          <tr><td class="bad-cell">Everyone <b>have</b> access</td><td class="ok-cell">Everyone <b>has</b> access</td></tr>
+          <tr><td class="bad-cell">The team <b>are</b> deciding (US)</td><td class="ok-cell">The team <b>is</b> deciding</td></tr>
+          <tr><td class="bad-cell">Each of the services <b>are</b> up</td><td class="ok-cell">Each of the services <b>is</b> up</td></tr>
+          <tr><td class="bad-cell">The list of bugs <b>are</b> long</td><td class="ok-cell">The list of bugs <b>is</b> long</td></tr>
+        </table>
+        <p class="note" style="margin:2px 0 0;"><b>Tip:</b> match the verb to the <u>real subject</u>, not the nearest noun ("the <b>list</b>… is", not "bugs are").</p>
+      </div>
+    </section>
+
+    <!-- ============ PRIORITY 4: COHESIVE DEVICES ============ -->
+    <section class="c-link priority">
+      <div class="sec-head"><span class="n">4</span> Upgrade Your Connectors (B1 → B2) <span class="flag">🎯 Priority</span></div>
+      <div class="sec-body">
+
+        <p class="note" style="margin:0 0 2px;">You already use <b>because, also, and, on the contrary, in order to</b> well. Now add these:</p>
+
+        <div class="grp">Your basic → B2 upgrade</div>
+        <table>
+          <tr><th>You say now</th><th>Upgrade to</th></tr>
+          <tr><td class="bad-cell">and / also</td><td class="ok-cell">furthermore · moreover · in addition</td></tr>
+          <tr><td class="bad-cell">because / so</td><td class="ok-cell">as a result · consequently · therefore</td></tr>
+          <tr><td class="bad-cell">but</td><td class="ok-cell">however · nevertheless · whereas</td></tr>
+        </table>
+
+        <div class="grp">Meaning + tech example</div>
+        <table>
+          <tr><th>Connector</th><th>Use it to… (example)</th></tr>
+          <tr><td><b>furthermore</b></td><td>add a stronger point — <i>It's slow; furthermore, it's untested.</i></td></tr>
+          <tr><td><b>moreover</b></td><td>reinforce — <i>The API is deprecated; moreover, it's insecure.</i></td></tr>
+          <tr><td><b>in addition</b></td><td>add info — <i>We added caching; in addition, we batched the calls.</i></td></tr>
+          <tr><td><b>however</b></td><td>contrast — <i>It compiled; however, it failed at runtime.</i></td></tr>
+          <tr><td><b>nevertheless</b></td><td>concede then continue — <i>Tests passed; nevertheless, I'd review it.</i></td></tr>
+          <tr><td><b>as a result</b></td><td>cause→effect — <i>The cache expired; as a result, reads spiked.</i></td></tr>
+          <tr><td><b>consequently</b></td><td>logical result — <i>We skipped the migration; consequently, it crashed.</i></td></tr>
+          <tr><td><b>whereas</b></td><td>direct contrast — <i>REST is stateless, whereas the session isn't.</i></td></tr>
+        </table>
+        <p class="note" style="margin:2px 0 0;"><b>Punctuation:</b> start of sentence + comma (<i>However, …</i>), or after <code>;</code> (<i>…; however, …</i>).</p>
+      </div>
+    </section>
+
+    <!-- ============ PRIORITY 5: COMPLETING THOUGHTS ============ -->
+    <section class="c-phrase priority">
+      <div class="sec-head"><span class="n">5</span> Finish Every Sentence (Coherence) <span class="flag">🎯 Priority</span></div>
+      <div class="sec-body">
+
+        <div class="mine">
+          <span class="lab">My assessment mistake (abandoned sentence)</span><br>
+          <span class="x">"when you go to the room probably so today the information…"</span>
+          <span class="arw">→</span>
+          <span class="v">"When you join the meeting, you'll probably get today's information about the release."</span>
+        </div>
+
+        <div class="grp">Start → Finish scaffolds (always land the ending)</div>
+        <table>
+          <tr><th>Start with…</th><th>…and finish with</th></tr>
+          <tr><td>The main issue is…</td><td>…<b>that</b> the query times out under load.</td></tr>
+          <tr><td>What I mean is…</td><td>…<b>that</b> we should cache the response.</td></tr>
+          <tr><td>The reason we did X is…</td><td>…<b>to</b> reduce latency.</td></tr>
+          <tr><td>When you deploy,…</td><td>…<b>make sure</b> the migration runs first.</td></tr>
+          <tr><td>My suggestion is…</td><td>…<b>to</b> split this into two tickets.</td></tr>
+        </table>
+        <ul class="tight">
+          <li><b>Rescue a lost sentence:</b> "Sorry, let me rephrase — …" then restart cleanly.</li>
+          <li><b>One idea per sentence.</b> Finish it, pause, then start the next.</li>
+          <li>If you feel it slipping, end early: <i>"…and that's the main risk."</i></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============ PRIORITY 6: WORD CHOICE ============ -->
+    <section class="c-vocab priority">
+      <div class="sec-head"><span class="n">6</span> More Natural Word Choice <span class="flag">🎯 Priority</span></div>
+      <div class="sec-body">
+
+        <div class="mine">
+          <span class="lab">My assessment mistake</span><br>
+          <span class="x">"<b>transmit</b> my knowledge"</span>
+          <span class="arw">→</span>
+          <span class="v">"<u>share</u> my knowledge" (with the team)</span>
+        </div>
+
+        <div class="grp">Say it the natural way</div>
+        <table>
+          <tr><th class="bad-cell">Less natural (yours)</th><th class="ok-cell">Natural collocation</th></tr>
+          <tr><td class="bad-cell">transmit my knowledge</td><td class="ok-cell">share my knowledge</td></tr>
+          <tr><td class="bad-cell">transmit / provide my ideas</td><td class="ok-cell">get my ideas across · put forward an idea</td></tr>
+          <tr><td class="bad-cell">acquire knowledge</td><td class="ok-cell">pick up / gain knowledge <span class="note">(acquire is fine, formal)</span></td></tr>
+          <tr><td class="bad-cell">make a clear communication</td><td class="ok-cell">communicate clearly</td></tr>
+          <tr><td class="bad-cell">good skills about learning</td><td class="ok-cell">strong learning skills</td></tr>
+          <tr><td class="bad-cell">proposed charges targets</td><td class="ok-cell">agreed goals · set targets</td></tr>
+          <tr><td class="bad-cell">define different requirements</td><td class="ok-cell">gather / clarify requirements</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ PRIORITY 7: HESITATION & REPETITION ============ -->
+    <section class="c-phrase priority">
+      <div class="sec-head"><span class="n">7</span> Less "uh/um", Less Repetition <span class="flag">🎯 Priority</span></div>
+      <div class="sec-body">
+
+        <div class="mine">
+          <span class="lab">My assessment habit</span><br>
+          <span class="x">"it's pretty important… it's so important…"</span>
+          <span class="arw">→</span>
+          <span class="v">vary it: "it's <u>essential</u> / <u>crucial</u> / <u>a key part of the job</u>"</span>
+        </div>
+
+        <div class="grp">Thinking phrases (buy time without "uh")</div>
+        <ul class="tight">
+          <li>"That's a good question — let me think for a second."</li>
+          <li>"Let me put it this way…" · "What I mean is…"</li>
+          <li>"The way I see it…" · "Off the top of my head…"</li>
+          <li>"Let me rephrase that." · "To give you an example…"</li>
+        </ul>
+
+        <div class="grp">Avoid repeating "important" — synonyms</div>
+        <table>
+          <tr><th>Instead of "important"</th><th>Use</th></tr>
+          <tr><td class="bad-cell">it's pretty important</td><td class="ok-cell">it's essential · crucial · vital</td></tr>
+          <tr><td class="bad-cell">a very important thing</td><td class="ok-cell">a key factor · a priority · what matters most</td></tr>
+        </table>
+        <p class="note" style="margin:2px 0 0;"><b>Also vary:</b> good → solid/strong; problem → issue/challenge; help → support/enable.</p>
+      </div>
+    </section>
+
+    <!-- ============ SUPPORTING: PHRASES ============ -->
+    <section class="c-phrase">
+      <div class="sec-head"><span class="n">8</span> Ready-Made Phrases (Standups &amp; Reviews)</div>
+      <div class="sec-body">
+        <div class="grp">Standups</div>
+        <ul class="tight">
+          <li>"Yesterday I <b>wrapped up</b> X; today I'm <b>picking up</b> Y."</li>
+          <li>"I'm <b>blocked on</b> the staging creds — could someone <b>unblock</b> me?"</li>
+        </ul>
+        <div class="grp">Code review (diplomatic)</div>
+        <ul class="tight">
+          <li>"<b>What do you think about</b> extracting a helper here?"</li>
+          <li>"<b>Minor / nit:</b> could we rename this for clarity?"</li>
+          <li>"Good catch — I'll <b>address</b> that."</li>
+        </ul>
+        <div class="grp">Clarifying requirements (US client)</div>
+        <ul class="tight">
+          <li>"Just to <b>make sure I understand</b>, do you mean…?"</li>
+          <li>"When you say 'fast', <b>what's the target</b> — p95 latency?"</li>
+          <li>"<b>Correct me if I'm wrong</b>, but the scope is only the API, right?"</li>
+        </ul>
+        <div class="grp">Hedging / softening (B2 signature)</div>
+        <ul class="tight">
+          <li>"It <b>tends to</b> fail under load." · "This <b>could potentially</b> break."</li>
+          <li>"I <b>suspect</b> the issue is… but I'd need to verify."</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============ SUPPORTING: LIGHT B2 GRAMMAR ============ -->
+    <section class="c-grammar">
+      <div class="sec-head"><span class="n">9</span> Other B2 Grammar (light — you're close)</div>
+      <div class="sec-body">
+        <div class="item"><span class="t">Present Perfect vs. Past Simple</span>
+          <span class="ex">We <b>have deployed</b> the fix (live now). We <b>deployed</b> it yesterday.</span></div>
+        <div class="item"><span class="t">Present Perfect Continuous</span>
+          <span class="ex">I<b>'ve been debugging</b> this all morning.</span></div>
+        <div class="item"><span class="t">2nd / 3rd Conditional</span>
+          <span class="ex">If we <b>had</b> more nodes, it <b>would scale</b>. If we <b>had added</b> tests, we <b>wouldn't have shipped</b> the bug.</span></div>
+        <div class="item"><span class="t">Modals of deduction</span>
+          <span class="ex">It <b>must be</b> a leak. It <b>can't be</b> the DB. It <b>might be</b> throttling.</span></div>
+        <div class="item"><span class="t">Relative clauses</span>
+          <span class="ex">Redis, <b>which</b> we added last sprint, cut latency.</span></div>
+        <div class="item"><span class="t">Passive (docs)</span>
+          <span class="ex">The token <b>is validated</b> before the request <b>is routed</b>.</span></div>
+      </div>
+    </section>
+
+    <!-- ============ SUPPORTING: PHRASAL VERBS ============ -->
+    <section class="c-phrasal">
+      <div class="sec-head"><span class="n">10</span> Handy Phrasal Verbs &amp; Idioms</div>
+      <div class="sec-body">
+        <table>
+          <tr><th>Phrase</th><th>Meaning · example</th></tr>
+          <tr><td><b>roll out / roll back</b></td><td>release / revert a deploy</td></tr>
+          <tr><td><b>spin up / tear down</b></td><td>start / destroy infra</td></tr>
+          <tr><td><b>look into</b></td><td>investigate — <i>I'll look into the timeout</i></td></tr>
+          <tr><td><b>figure out</b></td><td>solve — <i>figure out the root cause</i></td></tr>
+          <tr><td><b>break down</b></td><td>split — <i>break the epic down</i></td></tr>
+          <tr><td><b>run into</b></td><td>encounter — <i>we ran into a blocker</i></td></tr>
+          <tr><td><b>sign off (on)</b></td><td>approve — <i>QA signed off on it</i></td></tr>
+          <tr><td><b>catch up (on)</b></td><td>get up to date — <i>catch up on the thread</i></td></tr>
+        </table>
+        <ul class="tight">
+          <li><b>on the same page</b> — in agreement · <b>circle back</b> — return to later</li>
+          <li><b>bandwidth</b> — capacity · <b>technical debt</b> — shortcuts that cost later</li>
+          <li><b>low-hanging fruit</b> — easy wins · <b>a quick win</b></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============ STRENGTHS RECAP ============ -->
+    <section class="c-vocab">
+      <div class="sec-head"><span class="n">11</span> Your Strengths — keep using them ✔</div>
+      <div class="sec-body">
+        <ul class="tight">
+          <li>You <b>maintain extended discourse</b> on work topics — keep giving reasons + examples.</li>
+          <li>Good use of <b>subordinate clauses</b> ("when you try new knowledge, you need to study hard").</li>
+          <li>You can <b>paraphrase</b> — now pick the <u>natural</u> option (share, not transmit).</li>
+          <li>Solid role vocabulary: <i>career path, continuous professional development, clear target, mentee</i>.</li>
+        </ul>
+        <p class="note" style="margin:2px 0 0;"><b>Daily habit:</b> pick 1 verb pattern + 2 connectors + finish every sentence. That's your B2 route.</p>
+      </div>
+    </section>
+
+  </div><!-- /cols -->
+
+  <div class="footer">
+    <span>Personalized B1+ → B2 study sheet · Software &amp; AI Engineering</span>
+    <span>🎯 Priority sections first · Print to A4 PDF (enable “Background graphics”)</span>
+  </div>
+
+</div><!-- /page -->
+
+</body>
+</html>

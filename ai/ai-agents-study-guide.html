@@ -1,0 +1,1873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Agents &amp; Modern LLM Patterns — Technical Interview Study Guide</title>
+<style>
+/* ===== AI Agents Study Guide — print-ready blue theme ===== */
+
+:root {
+  --title-blue: #1a4067;      /* dark navy for main title */
+  --heading-blue: #2166a8;    /* medium blue for section headings */
+  --accent-blue: #2f6db5;     /* callout / borders */
+  --bold-navy: #17385a;       /* inline strong text */
+  --body: #1f2933;            /* body text */
+  --muted: #55606b;           /* italic intro / secondary */
+  --rule: #d3dce4;            /* thin horizontal rules */
+  --inline-code: #c93a67;     /* pink inline code */
+  --callout-bg: #e9f1fb;      /* blockquote background */
+
+  /* code-block (dark) syntax palette */
+  --cb-bg: #141b2d;
+  --cb-text: #d6deeb;
+  --cb-comment: #7fbfb3;
+  --cb-keyword: #e78ac3;
+  --cb-string: #a5d66f;
+  --cb-func: #82aaff;
+  --cb-number: #f79661;
+  --cb-attr: #d6deeb;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  margin: 0;
+  color: var(--body);
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: 11pt;
+  line-height: 1.55;
+}
+
+.page {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 40px 48px 64px;
+}
+
+/* ---------- Headings ---------- */
+h1, h2, h3, h4 {
+  color: var(--heading-blue);
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 1.6em 0 0.6em;
+}
+
+/* Main document title + Part dividers */
+h1 {
+  color: var(--title-blue);
+  font-size: 30pt;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-top: 0.2em;
+  padding-bottom: 14px;
+  border-bottom: 3px solid var(--title-blue);
+}
+
+/* Part dividers should start on a fresh page when printed */
+h1 + * { margin-top: 1em; }
+h1:not(:first-of-type) { page-break-before: always; }
+
+h2 {
+  font-size: 19pt;
+  margin-top: 1.8em;
+  color: var(--heading-blue);
+}
+
+h3 {
+  font-size: 14.5pt;
+  color: var(--heading-blue);
+}
+
+h4 {
+  font-size: 12pt;
+  color: var(--bold-navy);
+}
+
+h1, h2, h3, h4 { page-break-after: avoid; }
+
+/* ---------- Paragraphs / text ---------- */
+p { margin: 0.7em 0; }
+
+/* Italic intro line right after the title */
+h1:first-of-type + p em,
+p > em:only-child { color: var(--muted); }
+
+strong { color: var(--bold-navy); font-weight: 700; }
+
+a { color: var(--accent-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---------- Horizontal rules ---------- */
+hr {
+  border: none;
+  border-top: 1px solid var(--rule);
+  margin: 1.8em 0;
+}
+
+/* ---------- Lists ---------- */
+ul, ol { margin: 0.7em 0; padding-left: 1.5em; }
+li { margin: 0.35em 0; }
+ul li::marker { color: var(--accent-blue); }
+ol li::marker { color: var(--accent-blue); font-weight: 600; }
+
+/* ---------- Inline code ---------- */
+:not(pre) > code {
+  font-family: "Cascadia Code", "Consolas", "SFMono-Regular", monospace;
+  color: var(--inline-code);
+  font-size: 0.88em;
+  white-space: nowrap;
+}
+
+/* ---------- Blockquote callout ---------- */
+blockquote {
+  margin: 1.2em 0;
+  padding: 14px 18px;
+  background: var(--callout-bg);
+  border-left: 4px solid var(--accent-blue);
+  border-radius: 4px;
+  color: #223a52;
+  page-break-inside: avoid;
+}
+blockquote p { margin: 0.3em 0; }
+blockquote strong { color: var(--heading-blue); }
+
+/* ---------- Tables ---------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.2em 0;
+  font-size: 0.95em;
+  page-break-inside: avoid;
+}
+th, td {
+  border: 1px solid var(--rule);
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+thead th {
+  background: var(--heading-blue);
+  color: #ffffff;
+  font-weight: 700;
+}
+tbody tr:nth-child(even) { background: #f3f7fb; }
+
+/* ---------- Code blocks (dark) ---------- */
+pre.code-block {
+  background: var(--cb-bg);
+  color: var(--cb-text);
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 1.1em 0;
+  overflow-x: auto;
+  font-size: 9.5pt;
+  line-height: 1.5;
+  page-break-inside: avoid;
+}
+pre.code-block code {
+  font-family: "Cascadia Code", "Consolas", "SFMono-Regular", monospace;
+  color: var(--cb-text);
+  white-space: pre;
+  background: none;
+  padding: 0;
+}
+
+/* highlight.js token colors tuned to the blue theme */
+.hljs-comment, .hljs-quote { color: var(--cb-comment); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal,
+.hljs-type, .hljs-built_in, .hljs-name { color: var(--cb-keyword); }
+.hljs-string, .hljs-title.class_, .hljs-symbol,
+.hljs-regexp, .hljs-template-tag { color: var(--cb-string); }
+.hljs-title, .hljs-title.function_, .hljs-section { color: var(--cb-func); }
+.hljs-number, .hljs-meta { color: var(--cb-number); }
+.hljs-attr, .hljs-attribute, .hljs-property,
+.hljs-variable, .hljs-params { color: var(--cb-attr); }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 700; }
+
+/* ---------- Print ---------- */
+@page {
+  size: Letter;
+  margin: 18mm 16mm;
+}
+
+@media print {
+  .page { max-width: none; margin: 0; padding: 0; }
+  body { font-size: 10.5pt; }
+  pre.code-block {
+    font-size: 8.6pt;
+    /* Wrap long lines so nothing overflows the page width. Overflowing
+       content is the main cause of "Microsoft Print to PDF" producing a
+       corrupt / unopenable file. */
+    overflow-x: visible;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  pre.code-block code { white-space: pre-wrap; word-break: break-word; }
+  a { color: var(--accent-blue); }
+}
+
+</style>
+</head>
+<body>
+<main class="page">
+<h1>AI Agents &amp; Modern LLM Patterns — Technical Interview Study Guide</h1>
+<p><em>A datasource for retrieval, routing, tool-use, and evaluation — with production workflows and TypeScript / .NET code after every section.</em></p>
+<p><strong>Prepared:</strong> August 2026 · <strong>Scope:</strong> Current standards and best practices for building LLM-based AI agents.</p>
+<hr>
+<h2>How to use this document</h2>
+<p>This guide is written as a <strong>study datasource</strong> (e.g., for Gemini NotebookLM). Each major topic includes <strong>Concept → How it works → Best practices → Code → Interview angles</strong>. Code follows the explanation of each section, in both <strong>TypeScript</strong> (Vercel AI SDK v5+/v7, MCP SDK) and <strong>.NET</strong> (<code>Microsoft.Extensions.AI</code>, <strong>Microsoft Agent Framework</strong> — the 2025/2026 successor to Semantic Kernel + AutoGen).</p>
+<blockquote>
+<p><strong>Framing note.</strong> SDK class names evolve quickly; the <em>patterns</em> are stable. Learn the pattern first and verify the exact symbol against current docs.</p>
+</blockquote>
+<h3>Code conventions (so snippets stay short)</h3>
+<ul>
+<li><strong>TypeScript</strong> uses the <strong>Vercel AI SDK</strong>: <code>generateText</code>, <code>generateObject</code>, <code>embed</code>/<code>embedMany</code>, <code>tool</code>, <code>stepCountIs</code>, with <code>openai(...)</code> as the model.</li>
+<li><code>openai.getChatCompletions(DEPLOYMENT, messages, opts)</code> denotes an <strong>Azure OpenAI-style</strong> enterprise client (used where it mirrors common infra).</li>
+<li><code>llm(prompt)</code> is a thin helper = one <code>generateText</code> call returning <code>.text</code>.</li>
+<li><code>retrieve</code>, <code>vectorSearch</code>, <code>keywordSearch</code>, <code>MemoryStore</code>, <code>cache</code> are <strong>your infrastructure adapters</strong>.</li>
+<li><strong>.NET</strong> uses <code>Microsoft.Extensions.AI</code> (<code>IChatClient</code>, <code>IEmbeddingGenerator</code>) and <strong>Microsoft Agent Framework</strong> (<code>Microsoft.Agents.AI</code>).</li>
+<li>A shared type used throughout:</li>
+</ul>
+<pre class="code-block"><code class="language-ts"><span class="hljs-keyword">type</span> <span class="hljs-title class_">Chunk</span> = {
+  <span class="hljs-attr">id</span>: <span class="hljs-built_in">string</span>;
+  <span class="hljs-attr">title</span>: <span class="hljs-built_in">string</span>;
+  <span class="hljs-attr">content</span>: <span class="hljs-built_in">string</span>;
+  <span class="hljs-attr">source</span>: <span class="hljs-built_in">string</span>;       <span class="hljs-comment">// URL or document id, for citations</span>
+  <span class="hljs-attr">parentId</span>?: <span class="hljs-built_in">string</span>;    <span class="hljs-comment">// parent document (sentence-window / parent-doc retrieval)</span>
+  <span class="hljs-attr">score</span>?: <span class="hljs-built_in">number</span>;
+};</code></pre><p><strong>.NET / C#</strong> — the same shared type as a record:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">record</span> <span class="hljs-title">Chunk</span>(<span class="hljs-params">
+    <span class="hljs-built_in">string</span> Id,
+    <span class="hljs-built_in">string</span> Title,
+    <span class="hljs-built_in">string</span> Content,
+    <span class="hljs-built_in">string</span> Source,          // URL <span class="hljs-keyword">or</span> document id, <span class="hljs-keyword">for</span> citations
+    <span class="hljs-built_in">string</span>? ParentId = <span class="hljs-literal">null</span>, // parent document (sentence-window / parent-doc retrieval</span>)
+    <span class="hljs-built_in">double</span>? Score</span> = <span class="hljs-literal">null</span>);</code></pre><hr>
+<h1>Part 1 — Foundations</h1>
+<h2>1.1 What is an LLM agent?</h2>
+<p>An <strong>agent</strong> is a system in which a large language model <strong>dynamically directs its own control flow and tool usage</strong> to accomplish a goal, using feedback from the environment across multiple steps. Contrast this with a <strong>workflow</strong>, where LLM calls and tools are orchestrated through <strong>fixed, developer-defined code paths</strong>.</p>
+<p>Anthropic&#39;s widely-cited framing (&quot;Building Effective Agents&quot;):</p>
+<ul>
+<li><strong>Workflow</strong> = predefined, deterministic orchestration of LLM calls. Predictable, testable, cheaper.</li>
+<li><strong>Agent</strong> = the model decides what to do next, when to call tools, and when it is done. Flexible, but higher cost/latency and harder to constrain.</li>
+</ul>
+<p>Microsoft&#39;s Agent Framework uses the same distinction:</p>
+<table>
+<thead>
+<tr>
+<th>Use an <strong>agent</strong> when…</th>
+<th>Use a <strong>workflow</strong> when…</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>The task is open-ended or conversational</td>
+<td>The process has well-defined steps</td>
+</tr>
+<tr>
+<td>You need autonomous tool use and planning</td>
+<td>You need explicit control over execution order</td>
+</tr>
+<tr>
+<td>A single LLM call (with tools) suffices</td>
+<td>Multiple agents/functions must coordinate deterministically</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>The single most important best practice:</strong> <em>If you can write a plain function to handle the task, do that instead of using an agent.</em> Add agentic complexity only when it <strong>demonstrably</strong> improves outcomes.</p>
+</blockquote>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// WORKFLOW — the developer fixes the path. Deterministic and easy to test.</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">summarizeThenTranslate</span>(<span class="hljs-params"><span class="hljs-attr">doc</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">const</span> summary = <span class="hljs-keyword">await</span> <span class="hljs-title function_">llm</span>(<span class="hljs-string">`Summarize:\n<span class="hljs-subst">${doc}</span>`</span>);
+  <span class="hljs-keyword">return</span> <span class="hljs-title function_">llm</span>(<span class="hljs-string">`Translate the summary to Spanish:\n<span class="hljs-subst">${summary}</span>`</span>);
+}
+
+<span class="hljs-comment">// AGENT — the model decides what to do next, in a loop, using tools.</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">research</span>(<span class="hljs-params"><span class="hljs-attr">goal</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">return</span> <span class="hljs-title function_">runAgent</span>({ goal, <span class="hljs-attr">tools</span>: [webSearch, readPage, writeNote], <span class="hljs-attr">maxSteps</span>: <span class="hljs-number">12</span> });
+}</code></pre><p><strong>.NET / C#</strong> — a fixed workflow is plain code; an agent is a <code>Microsoft.Agents.AI</code> <code>AIAgent</code>:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Agents.AI;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-comment">// WORKFLOW — the developer fixes the path. Deterministic and easy to test.</span>
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task&lt;<span class="hljs-built_in">string</span>&gt; <span class="hljs-title">SummarizeThenTranslateAsync</span>(<span class="hljs-params">IChatClient chat, <span class="hljs-built_in">string</span> doc</span>)</span>
+{
+    <span class="hljs-keyword">var</span> summary = (<span class="hljs-keyword">await</span> chat.GetResponseAsync(<span class="hljs-string">$&quot;Summarize:\n<span class="hljs-subst">{doc}</span>&quot;</span>)).Text;
+    <span class="hljs-keyword">return</span> (<span class="hljs-keyword">await</span> chat.GetResponseAsync(<span class="hljs-string">$&quot;Translate the summary to Spanish:\n<span class="hljs-subst">{summary}</span>&quot;</span>)).Text;
+}
+
+<span class="hljs-comment">// AGENT — the model decides what to do next, in a loop, using tools.</span>
+AIAgent research = chatClient.CreateAIAgent(
+    instructions: <span class="hljs-string">&quot;Research the goal autonomously. Stop when it is met.&quot;</span>,
+    tools: [
+        AIFunctionFactory.Create(WebSearch),
+        AIFunctionFactory.Create(ReadPage),
+        AIFunctionFactory.Create(WriteNote)
+    ]);
+
+<span class="hljs-keyword">var</span> result = <span class="hljs-keyword">await</span> research.RunAsync(<span class="hljs-string">&quot;Summarize the latest agent research.&quot;</span>);</code></pre><h2>1.2 The Augmented LLM (the base building block)</h2>
+<p>Every agent pattern is built on an <strong>augmented LLM</strong> — a model with three add-ons:</p>
+<ol>
+<li><strong>Retrieval</strong> — fetch relevant external knowledge (RAG).</li>
+<li><strong>Tools</strong> — call functions/APIs to read or change the world.</li>
+<li><strong>Memory</strong> — persist information across turns and sessions.</li>
+</ol>
+<pre class="code-block"><code>              +----------------------------+
+   query ---&gt; |        Augmented LLM        | ---&gt; response
+              |                             |
+              |  +----------+  +---------+  |
+              |  |Retrieval |  |  Tools  |  |
+              |  +----------+  +---------+  |
+              |        +----------+         |
+              |        |  Memory  |         |
+              |        +----------+         |
+              +----------------------------+</code></pre><pre class="code-block"><code class="language-ts"><span class="hljs-keyword">type</span> <span class="hljs-title class_">AugmentedLLM</span> = {
+  <span class="hljs-attr">retrieve</span>: <span class="hljs-function">(<span class="hljs-params"><span class="hljs-attr">q</span>: <span class="hljs-built_in">string</span></span>) =&gt;</span> <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-title class_">Chunk</span>[]&gt;;
+  <span class="hljs-attr">tools</span>: <span class="hljs-title class_">Record</span>&lt;<span class="hljs-built_in">string</span>, <span class="hljs-title class_">Tool</span>&gt;;
+  <span class="hljs-attr">memory</span>: <span class="hljs-title class_">MemoryStore</span>;
+};
+
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">ask</span>(<span class="hljs-params"><span class="hljs-attr">a</span>: <span class="hljs-title class_">AugmentedLLM</span>, <span class="hljs-attr">userId</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">const</span> [context, memories] = <span class="hljs-keyword">await</span> <span class="hljs-title class_">Promise</span>.<span class="hljs-title function_">all</span>([
+    a.<span class="hljs-title function_">retrieve</span>(query),            <span class="hljs-comment">// retrieval</span>
+    a.<span class="hljs-property">memory</span>.<span class="hljs-title function_">recall</span>(userId, query), <span class="hljs-comment">// long-term memory</span>
+  ]);
+  <span class="hljs-keyword">return</span> <span class="hljs-title function_">generateText</span>({
+    <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>),
+    <span class="hljs-attr">system</span>: <span class="hljs-string">`Relevant long-term memory:\n<span class="hljs-subst">${memories.join(<span class="hljs-string">&quot;\n&quot;</span>)}</span>`</span>,
+    <span class="hljs-attr">tools</span>: a.<span class="hljs-property">tools</span>,               <span class="hljs-comment">// tools</span>
+    <span class="hljs-attr">prompt</span>: <span class="hljs-string">`Context:\n<span class="hljs-subst">${context.map((c) =&gt; c.content).join(<span class="hljs-string">&quot;\n&quot;</span>)}</span>\n\nQ: <span class="hljs-subst">${query}</span>`</span>,
+  });
+}</code></pre><p><strong>.NET / C#</strong> — retrieval + long-term memory injected into an <code>AIAgent</code> that owns the tools:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Agents.AI;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task&lt;<span class="hljs-built_in">string</span>&gt; <span class="hljs-title">AskAsync</span>(<span class="hljs-params">
+    IChatClient chatClient, MemoryStore memory,
+    Func&lt;<span class="hljs-built_in">string</span>, Task&lt;IReadOnlyList&lt;Chunk&gt;&gt;&gt; retrieve,
+    IList&lt;AITool&gt; tools, <span class="hljs-built_in">string</span> userId, <span class="hljs-built_in">string</span> query</span>)</span>
+{
+    <span class="hljs-keyword">var</span> contextTask   = retrieve(query);                 <span class="hljs-comment">// retrieval</span>
+    <span class="hljs-keyword">var</span> memoriesTask  = memory.RecallAsync(userId, query); <span class="hljs-comment">// long-term memory</span>
+    <span class="hljs-keyword">await</span> Task.WhenAll(contextTask, memoriesTask);
+
+    <span class="hljs-keyword">var</span> memoryText = <span class="hljs-built_in">string</span>.Join(<span class="hljs-string">&quot;\n&quot;</span>, memoriesTask.Result);
+    <span class="hljs-keyword">var</span> agent = chatClient.CreateAIAgent(
+        instructions: <span class="hljs-string">$&quot;Relevant long-term memory:\n<span class="hljs-subst">{memoryText}</span>&quot;</span>,
+        tools: tools);                                    <span class="hljs-comment">// tools</span>
+
+    <span class="hljs-keyword">var</span> context = <span class="hljs-built_in">string</span>.Join(<span class="hljs-string">&quot;\n&quot;</span>, contextTask.Result.Select(c =&gt; c.Content));
+    <span class="hljs-keyword">return</span> (<span class="hljs-keyword">await</span> agent.RunAsync(<span class="hljs-string">$&quot;Context:\n<span class="hljs-subst">{context}</span>\n\nQ: <span class="hljs-subst">{query}</span>&quot;</span>)).Text;
+}</code></pre><h2>1.3 The agent loop (ReAct)</h2>
+<p>Most autonomous agents implement a <strong>reason–act loop</strong> (ReAct = <em>Reasoning + Acting</em>):</p>
+<pre class="code-block"><code>loop:
+  THOUGHT   -&gt; model reasons about the goal and current state
+  ACTION    -&gt; model emits a tool call (name + arguments)
+  OBSERVE   -&gt; runtime executes the tool, returns the result
+  (repeat until the model emits a final answer or a stop condition triggers)</code></pre><p>Key concerns: a <strong>stop condition</strong> (max steps, budget, or a <code>finish</code> signal), <strong>state/context management</strong> between steps, and <strong>error recovery</strong> when a tool fails.</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// A minimal, explicit ReAct loop — what agent frameworks do under the hood.</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">reactLoop</span>(<span class="hljs-params"><span class="hljs-attr">goal</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">tools</span>: <span class="hljs-title class_">Record</span>&lt;<span class="hljs-built_in">string</span>, <span class="hljs-title class_">Tool</span>&gt;, maxSteps = <span class="hljs-number">8</span></span>) {
+  <span class="hljs-keyword">const</span> <span class="hljs-attr">messages</span>: <span class="hljs-title class_">Msg</span>[] = [{ <span class="hljs-attr">role</span>: <span class="hljs-string">&quot;user&quot;</span>, <span class="hljs-attr">content</span>: goal }];
+
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> step = <span class="hljs-number">0</span>; step &lt; maxSteps; step++) {
+    <span class="hljs-keyword">const</span> res = <span class="hljs-keyword">await</span> openai.<span class="hljs-title function_">getChatCompletions</span>(<span class="hljs-variable constant_">CHAT_DEPLOYMENT</span>, messages, {
+      <span class="hljs-attr">tools</span>: <span class="hljs-title function_">toToolSchemas</span>(tools),
+      <span class="hljs-attr">temperature</span>: <span class="hljs-number">0</span>,
+    });
+    <span class="hljs-keyword">const</span> msg = res.<span class="hljs-property">choices</span>[<span class="hljs-number">0</span>].<span class="hljs-property">message</span>;
+    messages.<span class="hljs-title function_">push</span>(msg);
+
+    <span class="hljs-keyword">const</span> calls = msg.<span class="hljs-property">toolCalls</span> ?? [];
+    <span class="hljs-keyword">if</span> (calls.<span class="hljs-property">length</span> === <span class="hljs-number">0</span>) <span class="hljs-keyword">return</span> msg.<span class="hljs-property">content</span>; <span class="hljs-comment">// final answer -&gt; done</span>
+
+    <span class="hljs-comment">// OBSERVE: execute each requested tool and feed results back.</span>
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> call <span class="hljs-keyword">of</span> calls) {
+      <span class="hljs-keyword">const</span> tool = tools[call.<span class="hljs-property">function</span>.<span class="hljs-property">name</span>];
+      <span class="hljs-keyword">const</span> result = <span class="hljs-keyword">await</span> tool.<span class="hljs-title function_">execute</span>(<span class="hljs-title class_">JSON</span>.<span class="hljs-title function_">parse</span>(call.<span class="hljs-property">function</span>.<span class="hljs-property">arguments</span>));
+      messages.<span class="hljs-title function_">push</span>({ <span class="hljs-attr">role</span>: <span class="hljs-string">&quot;tool&quot;</span>, <span class="hljs-attr">toolCallId</span>: call.<span class="hljs-property">id</span>, <span class="hljs-attr">content</span>: <span class="hljs-title class_">JSON</span>.<span class="hljs-title function_">stringify</span>(result) });
+    }
+  }
+  <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Error</span>(<span class="hljs-string">&quot;Step budget exhausted without a final answer&quot;</span>); <span class="hljs-comment">// guardrail</span>
+}</code></pre><p><strong>.NET / C#</strong> — Agent Framework runs the ReAct loop for you; <code>AIAgent.RunAsync</code> reasons,
+calls tools, and returns the final answer (loop control via <code>ChatOptions</code>):</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Agents.AI;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-comment">// The runtime performs THOUGHT -&gt; ACTION -&gt; OBSERVE automatically.</span>
+AIAgent agent = chatClient.CreateAIAgent(
+    instructions: <span class="hljs-string">&quot;Achieve the goal, using tools as needed.&quot;</span>,
+    tools: [AIFunctionFactory.Create(WebSearch), AIFunctionFactory.Create(ReadPage)]);
+
+<span class="hljs-comment">// Threads persist state between steps/turns.</span>
+AgentThread thread = agent.GetNewThread();
+<span class="hljs-keyword">var</span> answer = <span class="hljs-keyword">await</span> agent.RunAsync(goal, thread);
+
+<span class="hljs-comment">// To bound the tool loop explicitly, cap iterations via ChatClientAgentRunOptions:</span>
+<span class="hljs-keyword">var</span> bounded = <span class="hljs-keyword">await</span> agent.RunAsync(goal, thread, <span class="hljs-keyword">new</span> ChatClientAgentRunOptions(
+    <span class="hljs-keyword">new</span> ChatOptions { MaxOutputTokens = <span class="hljs-number">2000</span> }));</code></pre><h2>1.4 When NOT to build an agent</h2>
+<ul>
+<li>Single, deterministic transformation → <strong>just call the model once</strong> (or write code).</li>
+<li>Steps known in advance → <strong>use a workflow</strong>, not an agent.</li>
+<li>No tolerance for unpredictable cost/latency → prefer constrained workflows with gates.</li>
+<li>No evaluation harness → you cannot safely operate <em>any</em> agent; build evals first.</li>
+</ul>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// The best &quot;agent&quot; is often no agent. If the logic is deterministic, write code.</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">shippingCost</span>(<span class="hljs-params"><span class="hljs-attr">weightKg</span>: <span class="hljs-built_in">number</span>, <span class="hljs-attr">zone</span>: <span class="hljs-string">&quot;dom&quot;</span> | <span class="hljs-string">&quot;intl&quot;</span></span>): <span class="hljs-built_in">number</span> {
+  <span class="hljs-keyword">const</span> base = zone === <span class="hljs-string">&quot;intl&quot;</span> ? <span class="hljs-number">20</span> : <span class="hljs-number">5</span>;
+  <span class="hljs-keyword">return</span> base + weightKg * (zone === <span class="hljs-string">&quot;intl&quot;</span> ? <span class="hljs-number">4</span> : <span class="hljs-number">1.5</span>); <span class="hljs-comment">// no LLM needed</span>
+}</code></pre><p><strong>.NET / C#</strong> — the best &quot;agent&quot; is often no agent; deterministic logic is just code:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-built_in">decimal</span> <span class="hljs-title">ShippingCost</span>(<span class="hljs-params"><span class="hljs-built_in">decimal</span> weightKg, <span class="hljs-built_in">string</span> zone</span>) <span class="hljs-comment">// &quot;dom&quot; | &quot;intl&quot;</span></span>
+{
+    <span class="hljs-keyword">var</span> @base = zone == <span class="hljs-string">&quot;intl&quot;</span> ? <span class="hljs-number">20m</span> : <span class="hljs-number">5m</span>;
+    <span class="hljs-keyword">return</span> @base + weightKg * (zone == <span class="hljs-string">&quot;intl&quot;</span> ? <span class="hljs-number">4m</span> : <span class="hljs-number">1.5m</span>); <span class="hljs-comment">// no LLM needed</span>
+}</code></pre><hr>
+<h1>Part 2 — Retrieval (RAG)</h1>
+<h2>2.1 What &amp; why</h2>
+<p><strong>Retrieval-Augmented Generation (RAG)</strong> injects relevant external context into the prompt at inference time so the model can answer using <strong>fresh, private, or domain-specific</strong> knowledge it was not trained on. It reduces hallucination, enables citations, and avoids the cost/staleness of fine-tuning for knowledge that changes.</p>
+<p><strong>RAG vs fine-tuning vs long-context:</strong></p>
+<ul>
+<li><strong>RAG</strong> → dynamic/changing knowledge, citations, access control, large corpora.</li>
+<li><strong>Fine-tuning</strong> → teach <em>behavior/format/style</em>, not facts.</li>
+<li><strong>Long-context / &quot;just paste it in&quot;</strong> → small, static corpora; simplest, but costs tokens per call and degrades on very large contexts (&quot;lost in the middle&quot;).</li>
+</ul>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// Decision helper: does this request even need retrieval?</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">needsRetrieval</span>(<span class="hljs-params"><span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span></span>): <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-built_in">boolean</span>&gt; {
+  <span class="hljs-keyword">const</span> { <span class="hljs-built_in">object</span> } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateObject</span>({
+    <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4-mini&quot;</span>),
+    <span class="hljs-attr">schema</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">needsKnowledge</span>: z.<span class="hljs-title function_">boolean</span>() }),
+    <span class="hljs-attr">prompt</span>: <span class="hljs-string">`Does answering this require looking up private/factual knowledge?\n<span class="hljs-subst">${query}</span>`</span>,
+  });
+  <span class="hljs-keyword">return</span> <span class="hljs-built_in">object</span>.<span class="hljs-property">needsKnowledge</span>; <span class="hljs-comment">// route chit-chat around the RAG pipeline</span>
+}</code></pre><p><strong>.NET / C#</strong> \u2014 typed decision via <code>Microsoft.Extensions.AI</code> structured output:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-keyword">record</span> <span class="hljs-title">RetrievalDecision</span>(<span class="hljs-title">bool</span> <span class="hljs-title">NeedsKnowledge</span>);
+
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task&lt;<span class="hljs-built_in">bool</span>&gt; <span class="hljs-title">NeedsRetrievalAsync</span>(<span class="hljs-params">IChatClient chat, <span class="hljs-built_in">string</span> query</span>)</span>
+{
+    <span class="hljs-keyword">var</span> decision = (<span class="hljs-keyword">await</span> chat.GetResponseAsync&lt;RetrievalDecision&gt;(
+        <span class="hljs-string">$&quot;Does answering this require looking up private/factual knowledge?\n<span class="hljs-subst">{query}</span>&quot;</span>)).Result;
+    <span class="hljs-keyword">return</span> decision.NeedsKnowledge; <span class="hljs-comment">// route chit-chat around the RAG pipeline</span>
+}</code></pre><h2>2.2 The RAG pipeline</h2>
+<pre class="code-block"><code>INGESTION (offline)                         QUERY (online)
+------------------                          --------------
+documents                                   user query
+   | load &amp; parse                              | (optional) query transform
+   v                                           v
+chunking                                    embed query
+   |                                           |
+   v                                           v
+embed chunks --&gt; vector store &lt;---- retrieve top-k (ANN) + keyword (BM25)
+   |                                           |
+   v                                           v
+metadata index                             fuse (RRF) -&gt; rerank (cross-encoder)
+                                               |
+                                               v
+                                          build prompt (context + query) --&gt; LLM --&gt; answer + citations</code></pre><p>The end-to-end <strong>grounded generation</strong> step — multi-tenant, cited, reproducible (the shape most production RAG endpoints take):</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-keyword">function</span> <span class="hljs-title function_">buildMessages</span>(<span class="hljs-params"><span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">chunks</span>: <span class="hljs-title class_">Chunk</span>[]</span>) {
+  <span class="hljs-keyword">const</span> sources = chunks
+    .<span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">c, i</span>) =&gt;</span> <span class="hljs-string">`[<span class="hljs-subst">${i + <span class="hljs-number">1</span>}</span>] (title: <span class="hljs-subst">${c.title}</span>) <span class="hljs-subst">${c.content}</span>`</span>)
+    .<span class="hljs-title function_">join</span>(<span class="hljs-string">&quot;\n\n&quot;</span>);
+
+  <span class="hljs-keyword">const</span> system = [
+    <span class="hljs-string">&quot;You are a product knowledge assistant. Answer ONLY using the sources provided.&quot;</span>,
+    <span class="hljs-string">&quot;If the sources do not contain the answer, say you don&#x27;t have enough information.&quot;</span>,
+    <span class="hljs-string">&quot;Cite sources inline using their [number]. Never invent attributes, prices, or claims.&quot;</span>,
+  ].<span class="hljs-title function_">join</span>(<span class="hljs-string">&quot; &quot;</span>);
+
+  <span class="hljs-keyword">return</span> [
+    { <span class="hljs-attr">role</span>: <span class="hljs-string">&quot;system&quot;</span> <span class="hljs-keyword">as</span> <span class="hljs-keyword">const</span>, <span class="hljs-attr">content</span>: system },
+    { <span class="hljs-attr">role</span>: <span class="hljs-string">&quot;user&quot;</span>   <span class="hljs-keyword">as</span> <span class="hljs-keyword">const</span>, <span class="hljs-attr">content</span>: <span class="hljs-string">`Sources:\n<span class="hljs-subst">${sources}</span>\n\nQuestion: <span class="hljs-subst">${query}</span>`</span> },
+  ];
+}
+
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">answer</span>(<span class="hljs-params"><span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">tenantId</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">const</span> chunks = <span class="hljs-keyword">await</span> <span class="hljs-title function_">retrieve</span>(query, tenantId); <span class="hljs-comment">// tenant-isolated retrieval</span>
+
+  <span class="hljs-keyword">if</span> (chunks.<span class="hljs-property">length</span> === <span class="hljs-number">0</span>) {
+    <span class="hljs-keyword">return</span> { <span class="hljs-attr">text</span>: <span class="hljs-string">&quot;I don&#x27;t have enough information to answer that.&quot;</span>, <span class="hljs-attr">citations</span>: [] };
+  }
+
+  <span class="hljs-keyword">const</span> res = <span class="hljs-keyword">await</span> openai.<span class="hljs-title function_">getChatCompletions</span>(<span class="hljs-variable constant_">CHAT_DEPLOYMENT</span>, <span class="hljs-title function_">buildMessages</span>(query, chunks), {
+    <span class="hljs-attr">temperature</span>: <span class="hljs-number">0</span>,     <span class="hljs-comment">// grounded + reproducible</span>
+    <span class="hljs-attr">maxTokens</span>: <span class="hljs-number">500</span>,
+  });
+
+  <span class="hljs-keyword">return</span> {
+    <span class="hljs-attr">text</span>: res.<span class="hljs-property">choices</span>[<span class="hljs-number">0</span>].<span class="hljs-property">message</span>?.<span class="hljs-property">content</span> ?? <span class="hljs-string">&quot;&quot;</span>,
+    <span class="hljs-attr">citations</span>: chunks.<span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">c, i</span>) =&gt;</span> ({
+      <span class="hljs-attr">id</span>: i + <span class="hljs-number">1</span>, <span class="hljs-attr">title</span>: c.<span class="hljs-property">title</span>, <span class="hljs-attr">source</span>: c.<span class="hljs-property">source</span>, <span class="hljs-attr">parentId</span>: c.<span class="hljs-property">parentId</span>,
+    })),
+  };
+}</code></pre><p><strong>.NET / C#</strong> — the same grounded generation with <code>Microsoft.Extensions.AI</code>:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-keyword">async</span> Task&lt;(<span class="hljs-built_in">string</span> Text, IReadOnlyList&lt;Citation&gt; Citations)&gt; AnswerAsync(
+    IChatClient chat, <span class="hljs-built_in">string</span> query, <span class="hljs-built_in">string</span> tenantId)
+{
+    <span class="hljs-keyword">var</span> chunks = <span class="hljs-keyword">await</span> RetrieveAsync(query, tenantId); <span class="hljs-comment">// tenant-isolated</span>
+    <span class="hljs-keyword">if</span> (chunks.Count == <span class="hljs-number">0</span>)
+        <span class="hljs-keyword">return</span> (<span class="hljs-string">&quot;I don&#x27;t have enough information to answer that.&quot;</span>, []);
+
+    <span class="hljs-keyword">var</span> sources = <span class="hljs-built_in">string</span>.Join(<span class="hljs-string">&quot;\n\n&quot;</span>,
+        chunks.Select((c, i) =&gt; <span class="hljs-string">$&quot;[<span class="hljs-subst">{i + <span class="hljs-number">1</span>}</span>] (title: <span class="hljs-subst">{c.Title}</span>) <span class="hljs-subst">{c.Content}</span>&quot;</span>));
+
+    <span class="hljs-keyword">var</span> messages = <span class="hljs-keyword">new</span> List&lt;ChatMessage&gt;
+    {
+        <span class="hljs-keyword">new</span>(ChatRole.System,
+            <span class="hljs-string">&quot;Answer ONLY using the sources. Cite inline as [n]. &quot;</span> +
+            <span class="hljs-string">&quot;If the sources lack the answer, say so. Never invent facts.&quot;</span>),
+        <span class="hljs-keyword">new</span>(ChatRole.User, <span class="hljs-string">$&quot;Sources:\n<span class="hljs-subst">{sources}</span>\n\nQuestion: <span class="hljs-subst">{query}</span>&quot;</span>)
+    };
+
+    <span class="hljs-keyword">var</span> res = <span class="hljs-keyword">await</span> chat.GetResponseAsync(messages,
+        <span class="hljs-keyword">new</span> ChatOptions { Temperature = <span class="hljs-number">0f</span>, MaxOutputTokens = <span class="hljs-number">500</span> });
+
+    <span class="hljs-keyword">var</span> citations = chunks.Select((c, i) =&gt;
+        <span class="hljs-keyword">new</span> Citation(i + <span class="hljs-number">1</span>, c.Title, c.Source, c.ParentId)).ToList();
+    <span class="hljs-keyword">return</span> (res.Text, citations);
+}</code></pre><h2>2.3 Chunking</h2>
+<p>The model retrieves <strong>chunks</strong>, not documents. Chunking quality dominates RAG quality.</p>
+<ul>
+<li><strong>Fixed-size + overlap</strong> — e.g., 500–1,000 tokens with 10–20% overlap. Simple baseline.</li>
+<li><strong>Recursive/structural</strong> — split on document structure (headings, paragraphs, code blocks). Preferred default.</li>
+<li><strong>Semantic chunking</strong> — split where embedding similarity between adjacent sentences drops.</li>
+<li><strong>Sentence-window / parent-document</strong> — embed small units for precise matching; return a larger surrounding window (via <code>parentId</code>) to the LLM.</li>
+</ul>
+<p><strong>Best practices:</strong> keep chunks semantically coherent; store rich <strong>metadata</strong> (source, title, section, timestamp, ACL); tune size to the embedding model and content type.</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// Recursive/structural chunking: split on the coarsest boundary that keeps</span>
+<span class="hljs-comment">// chunks under the target size, carrying overlap for context continuity.</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">chunkText</span>(<span class="hljs-params"><span class="hljs-attr">text</span>: <span class="hljs-built_in">string</span>, targetChars = <span class="hljs-number">3000</span>, overlap = <span class="hljs-number">300</span></span>): <span class="hljs-built_in">string</span>[] {
+  <span class="hljs-keyword">const</span> separators = [<span class="hljs-string">&quot;\n## &quot;</span>, <span class="hljs-string">&quot;\n### &quot;</span>, <span class="hljs-string">&quot;\n\n&quot;</span>, <span class="hljs-string">&quot;\n&quot;</span>, <span class="hljs-string">&quot;. &quot;</span>]; <span class="hljs-comment">// coarse -&gt; fine</span>
+  <span class="hljs-keyword">const</span> <span class="hljs-attr">out</span>: <span class="hljs-built_in">string</span>[] = [];
+
+  <span class="hljs-keyword">function</span> <span class="hljs-title function_">split</span>(<span class="hljs-params"><span class="hljs-attr">segment</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">depth</span>: <span class="hljs-built_in">number</span></span>) {
+    <span class="hljs-keyword">if</span> (segment.<span class="hljs-property">length</span> &lt;= targetChars || depth &gt;= separators.<span class="hljs-property">length</span>) {
+      <span class="hljs-keyword">if</span> (segment.<span class="hljs-title function_">trim</span>()) out.<span class="hljs-title function_">push</span>(segment.<span class="hljs-title function_">trim</span>());
+      <span class="hljs-keyword">return</span>;
+    }
+    <span class="hljs-keyword">let</span> buf = <span class="hljs-string">&quot;&quot;</span>;
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> part <span class="hljs-keyword">of</span> segment.<span class="hljs-title function_">split</span>(separators[depth])) {
+      <span class="hljs-keyword">if</span> ((buf + part).<span class="hljs-property">length</span> &gt; targetChars &amp;&amp; buf) {
+        out.<span class="hljs-title function_">push</span>(buf.<span class="hljs-title function_">trim</span>());
+        buf = buf.<span class="hljs-title function_">slice</span>(-overlap); <span class="hljs-comment">// overlap keeps neighboring context</span>
+      }
+      buf += (buf ? separators[depth] : <span class="hljs-string">&quot;&quot;</span>) + part;
+    }
+    <span class="hljs-keyword">if</span> (buf.<span class="hljs-title function_">trim</span>()) <span class="hljs-title function_">split</span>(buf, depth + <span class="hljs-number">1</span>);
+  }
+
+  <span class="hljs-title function_">split</span>(text, <span class="hljs-number">0</span>);
+  <span class="hljs-keyword">return</span> out;
+}</code></pre><p><strong>.NET / C#</strong> — recursive/structural chunking with overlap:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-function">List&lt;<span class="hljs-built_in">string</span>&gt; <span class="hljs-title">ChunkText</span>(<span class="hljs-params"><span class="hljs-built_in">string</span> text, <span class="hljs-built_in">int</span> targetChars = <span class="hljs-number">3000</span>, <span class="hljs-built_in">int</span> overlap = <span class="hljs-number">300</span></span>)</span>
+{
+    <span class="hljs-built_in">string</span>[] separators = [<span class="hljs-string">&quot;\n## &quot;</span>, <span class="hljs-string">&quot;\n### &quot;</span>, <span class="hljs-string">&quot;\n\n&quot;</span>, <span class="hljs-string">&quot;\n&quot;</span>, <span class="hljs-string">&quot;. &quot;</span>]; <span class="hljs-comment">// coarse -&gt; fine</span>
+    <span class="hljs-keyword">var</span> outList = <span class="hljs-keyword">new</span> List&lt;<span class="hljs-built_in">string</span>&gt;();
+
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">Split</span>(<span class="hljs-params"><span class="hljs-built_in">string</span> segment, <span class="hljs-built_in">int</span> depth</span>)</span>
+    {
+        <span class="hljs-keyword">if</span> (segment.Length &lt;= targetChars || depth &gt;= separators.Length)
+        {
+            <span class="hljs-keyword">if</span> (segment.Trim().Length &gt; <span class="hljs-number">0</span>) outList.Add(segment.Trim());
+            <span class="hljs-keyword">return</span>;
+        }
+        <span class="hljs-keyword">var</span> buf = <span class="hljs-string">&quot;&quot;</span>;
+        <span class="hljs-keyword">foreach</span> (<span class="hljs-keyword">var</span> part <span class="hljs-keyword">in</span> segment.Split(separators[depth]))
+        {
+            <span class="hljs-keyword">if</span> ((buf + part).Length &gt; targetChars &amp;&amp; buf.Length &gt; <span class="hljs-number">0</span>)
+            {
+                outList.Add(buf.Trim());
+                buf = buf[Math.Max(<span class="hljs-number">0</span>, buf.Length - overlap)..]; <span class="hljs-comment">// overlap keeps context</span>
+            }
+            buf += (buf.Length &gt; <span class="hljs-number">0</span> ? separators[depth] : <span class="hljs-string">&quot;&quot;</span>) + part;
+        }
+        <span class="hljs-keyword">if</span> (buf.Trim().Length &gt; <span class="hljs-number">0</span>) Split(buf, depth + <span class="hljs-number">1</span>);
+    }
+
+    Split(text, <span class="hljs-number">0</span>);
+    <span class="hljs-keyword">return</span> outList;
+}</code></pre><h2>2.4 Embeddings &amp; similarity</h2>
+<p>An <strong>embedding</strong> maps text to a dense vector such that semantically similar text is close in vector space. Retrieval ranks chunks by <strong>cosine similarity</strong> (or dot product) to the query embedding.</p>
+<ul>
+<li>Use the <strong>same model</strong> for indexing and querying.</li>
+<li>Examples: OpenAI <code>text-embedding-3-large/small</code>, Cohere <code>embed-v3</code>, open models like <code>bge</code>/<code>e5</code>.</li>
+<li><strong>Asymmetric search:</strong> some models offer query/document prefixes — use them.</li>
+</ul>
+<pre class="code-block"><code class="language-ts"><span class="hljs-keyword">import</span> { embed, embedMany } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;ai&quot;</span>;
+<span class="hljs-keyword">const</span> embedModel = openai.<span class="hljs-title function_">textEmbeddingModel</span>(<span class="hljs-string">&quot;text-embedding-3-small&quot;</span>);
+
+<span class="hljs-comment">// Ingestion: embed many chunks in one batched call.</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">indexChunks</span>(<span class="hljs-params"><span class="hljs-attr">chunks</span>: <span class="hljs-title class_">Chunk</span>[], <span class="hljs-attr">store</span>: <span class="hljs-title class_">VectorStore</span>, <span class="hljs-attr">tenantId</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">const</span> { embeddings } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">embedMany</span>({ <span class="hljs-attr">model</span>: embedModel, <span class="hljs-attr">values</span>: chunks.<span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">c</span>) =&gt;</span> c.<span class="hljs-property">content</span>) });
+  <span class="hljs-keyword">await</span> store.<span class="hljs-title function_">upsert</span>(chunks.<span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">c, i</span>) =&gt;</span> ({ ...c, tenantId, <span class="hljs-attr">vector</span>: embeddings[i] })));
+}
+
+<span class="hljs-comment">// Cosine similarity (when you need it explicitly).</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">cosine</span>(<span class="hljs-params"><span class="hljs-attr">a</span>: <span class="hljs-built_in">number</span>[], <span class="hljs-attr">b</span>: <span class="hljs-built_in">number</span>[]</span>): <span class="hljs-built_in">number</span> {
+  <span class="hljs-keyword">let</span> dot = <span class="hljs-number">0</span>, na = <span class="hljs-number">0</span>, nb = <span class="hljs-number">0</span>;
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; a.<span class="hljs-property">length</span>; i++) { dot += a[i] * b[i]; na += a[i] ** <span class="hljs-number">2</span>; nb += b[i] ** <span class="hljs-number">2</span>; }
+  <span class="hljs-keyword">return</span> dot / (<span class="hljs-title class_">Math</span>.<span class="hljs-title function_">sqrt</span>(na) * <span class="hljs-title class_">Math</span>.<span class="hljs-title function_">sqrt</span>(nb));
+}</code></pre><p><strong>.NET / C#</strong> — batched embedding via <code>IEmbeddingGenerator</code> + cosine similarity:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-comment">// Ingestion: embed many chunks in one batched call.</span>
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task <span class="hljs-title">IndexChunksAsync</span>(<span class="hljs-params">
+    IEmbeddingGenerator&lt;<span class="hljs-built_in">string</span>, Embedding&lt;<span class="hljs-built_in">float</span>&gt;&gt; embedder,
+    IReadOnlyList&lt;Chunk&gt; chunks, VectorStore store, <span class="hljs-built_in">string</span> tenantId</span>)</span>
+{
+    <span class="hljs-keyword">var</span> embeddings = <span class="hljs-keyword">await</span> embedder.GenerateAsync(chunks.Select(c =&gt; c.Content));
+    <span class="hljs-keyword">await</span> store.UpsertAsync(chunks.Zip(embeddings,
+        (c, e) =&gt; <span class="hljs-keyword">new</span> StoredChunk(c, tenantId, e.Vector)));
+}
+
+<span class="hljs-comment">// Cosine similarity (when you need it explicitly).</span>
+<span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-built_in">float</span> <span class="hljs-title">Cosine</span>(<span class="hljs-params">ReadOnlySpan&lt;<span class="hljs-built_in">float</span>&gt; a, ReadOnlySpan&lt;<span class="hljs-built_in">float</span>&gt; b</span>)</span>
+{
+    <span class="hljs-built_in">float</span> dot = <span class="hljs-number">0</span>, na = <span class="hljs-number">0</span>, nb = <span class="hljs-number">0</span>;
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> i = <span class="hljs-number">0</span>; i &lt; a.Length; i++) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
+    <span class="hljs-keyword">return</span> dot / (MathF.Sqrt(na) * MathF.Sqrt(nb));
+}</code></pre><h2>2.5 Vector databases &amp; ANN indexes</h2>
+<p>At scale you use <strong>Approximate Nearest Neighbor (ANN)</strong> indexes instead of brute force:</p>
+<ul>
+<li><strong>HNSW</strong> — graph-based; excellent recall/latency; high memory. The common default.</li>
+<li><strong>IVF / IVF-PQ</strong> — inverted file + product quantization; compresses vectors, lower memory, tunable recall.</li>
+</ul>
+<p><strong>Stores:</strong> Postgres + <code>pgvector</code>, Qdrant, Weaviate, Milvus, Pinecone, Redis, Elasticsearch/OpenSearch, Azure AI Search. Choose by ops model, filtering, and hybrid support.</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// ANN search MUST filter by tenant to prevent cross-tenant leakage (see LLM08).</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">vectorSearch</span>(<span class="hljs-params"><span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">tenantId</span>: <span class="hljs-built_in">string</span>, topK = <span class="hljs-number">20</span></span>): <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-title class_">Chunk</span>[]&gt; {
+  <span class="hljs-keyword">const</span> { embedding } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">embed</span>({ <span class="hljs-attr">model</span>: embedModel, <span class="hljs-attr">value</span>: query });
+  <span class="hljs-keyword">return</span> store.<span class="hljs-title function_">search</span>(embedding, {
+    topK,
+    <span class="hljs-attr">filter</span>: { tenantId },        <span class="hljs-comment">// metadata filter enforced at the index</span>
+    <span class="hljs-comment">// ef/nprobe tune the recall/latency trade-off for HNSW/IVF respectively</span>
+  });
+}</code></pre><p><strong>.NET / C#</strong> — ANN search with a mandatory tenant filter:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-comment">// ANN search MUST filter by tenant to prevent cross-tenant leakage (see LLM08).</span>
+<span class="hljs-keyword">async</span> Task&lt;IReadOnlyList&lt;Chunk&gt;&gt; VectorSearchAsync(
+    IEmbeddingGenerator&lt;<span class="hljs-built_in">string</span>, Embedding&lt;<span class="hljs-built_in">float</span>&gt;&gt; embedder,
+    VectorStore store, <span class="hljs-built_in">string</span> query, <span class="hljs-built_in">string</span> tenantId, <span class="hljs-built_in">int</span> topK = <span class="hljs-number">20</span>)
+{
+    <span class="hljs-keyword">var</span> embedding = (<span class="hljs-keyword">await</span> embedder.GenerateAsync([query]))[<span class="hljs-number">0</span>].Vector;
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> store.SearchAsync(embedding, <span class="hljs-keyword">new</span> SearchOptions
+    {
+        TopK = topK,
+        Filter = <span class="hljs-keyword">new</span> { TenantId = tenantId } <span class="hljs-comment">// metadata filter enforced at the index</span>
+    });
+}</code></pre><h2>2.6 Hybrid search &amp; fusion</h2>
+<p>Dense retrieval misses <strong>exact matches</strong> (IDs, error codes). <strong>Sparse/keyword</strong> (BM25) misses paraphrases. <strong>Hybrid search</strong> runs both and fuses results with <strong>Reciprocal Rank Fusion (RRF)</strong>:</p>
+<pre class="code-block"><code>score(d) = Σ_over_retrievers  1 / (k + rank_i(d))     # k ~ 60</code></pre><p>RRF combines ranked lists using rank position only, so scores need no normalization.</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-keyword">function</span> <span class="hljs-title function_">reciprocalRankFusion</span>(<span class="hljs-params"><span class="hljs-attr">lists</span>: <span class="hljs-title class_">Chunk</span>[][], k = <span class="hljs-number">60</span></span>): <span class="hljs-title class_">Chunk</span>[] {
+  <span class="hljs-keyword">const</span> scored = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Map</span>&lt;<span class="hljs-built_in">string</span>, { <span class="hljs-attr">chunk</span>: <span class="hljs-title class_">Chunk</span>; <span class="hljs-attr">score</span>: <span class="hljs-built_in">number</span> }&gt;();
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> list <span class="hljs-keyword">of</span> lists) {
+    list.<span class="hljs-title function_">forEach</span>(<span class="hljs-function">(<span class="hljs-params">chunk, rank</span>) =&gt;</span> {
+      <span class="hljs-keyword">const</span> add = <span class="hljs-number">1</span> / (k + rank + <span class="hljs-number">1</span>);
+      <span class="hljs-keyword">const</span> prev = scored.<span class="hljs-title function_">get</span>(chunk.<span class="hljs-property">id</span>);
+      <span class="hljs-keyword">if</span> (prev) prev.<span class="hljs-property">score</span> += add;
+      <span class="hljs-keyword">else</span> scored.<span class="hljs-title function_">set</span>(chunk.<span class="hljs-property">id</span>, { chunk, <span class="hljs-attr">score</span>: add });
+    });
+  }
+  <span class="hljs-keyword">return</span> [...scored.<span class="hljs-title function_">values</span>()].<span class="hljs-title function_">sort</span>(<span class="hljs-function">(<span class="hljs-params">a, b</span>) =&gt;</span> b.<span class="hljs-property">score</span> - a.<span class="hljs-property">score</span>).<span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">s</span>) =&gt;</span> s.<span class="hljs-property">chunk</span>);
+}
+
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">hybridSearch</span>(<span class="hljs-params"><span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">tenantId</span>: <span class="hljs-built_in">string</span>, topK = <span class="hljs-number">20</span></span>): <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-title class_">Chunk</span>[]&gt; {
+  <span class="hljs-keyword">const</span> [dense, sparse] = <span class="hljs-keyword">await</span> <span class="hljs-title class_">Promise</span>.<span class="hljs-title function_">all</span>([
+    <span class="hljs-title function_">vectorSearch</span>(query, tenantId, topK),  <span class="hljs-comment">// ANN over embeddings</span>
+    <span class="hljs-title function_">keywordSearch</span>(query, tenantId, topK), <span class="hljs-comment">// BM25 / full-text</span>
+  ]);
+  <span class="hljs-keyword">return</span> <span class="hljs-title function_">reciprocalRankFusion</span>([dense, sparse]).<span class="hljs-title function_">slice</span>(<span class="hljs-number">0</span>, topK);
+}</code></pre><p><strong>.NET / C#</strong> — Reciprocal Rank Fusion over dense + sparse lists:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-function">List&lt;Chunk&gt; <span class="hljs-title">ReciprocalRankFusion</span>(<span class="hljs-params">IEnumerable&lt;IReadOnlyList&lt;Chunk&gt;&gt; lists, <span class="hljs-built_in">int</span> k = <span class="hljs-number">60</span></span>)</span>
+{
+    <span class="hljs-keyword">var</span> scored = <span class="hljs-keyword">new</span> Dictionary&lt;<span class="hljs-built_in">string</span>, (Chunk Chunk, <span class="hljs-built_in">double</span> Score)&gt;();
+    <span class="hljs-keyword">foreach</span> (<span class="hljs-keyword">var</span> list <span class="hljs-keyword">in</span> lists)
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> rank = <span class="hljs-number">0</span>; rank &lt; list.Count; rank++)
+        {
+            <span class="hljs-keyword">var</span> chunk = list[rank];
+            <span class="hljs-keyword">var</span> <span class="hljs-keyword">add</span> = <span class="hljs-number">1.0</span> / (k + rank + <span class="hljs-number">1</span>);
+            scored[chunk.Id] = scored.TryGetValue(chunk.Id, <span class="hljs-keyword">out</span> <span class="hljs-keyword">var</span> prev)
+                ? (prev.Chunk, prev.Score + <span class="hljs-keyword">add</span>)
+                : (chunk, <span class="hljs-keyword">add</span>);
+        }
+    <span class="hljs-keyword">return</span> scored.Values.OrderByDescending(s =&gt; s.Score).Select(s =&gt; s.Chunk).ToList();
+}
+
+<span class="hljs-keyword">async</span> Task&lt;List&lt;Chunk&gt;&gt; HybridSearchAsync(<span class="hljs-built_in">string</span> query, <span class="hljs-built_in">string</span> tenantId, <span class="hljs-built_in">int</span> topK = <span class="hljs-number">20</span>)
+{
+    <span class="hljs-keyword">var</span> denseTask  = VectorSearchAsync(query, tenantId, topK);  <span class="hljs-comment">// ANN over embeddings</span>
+    <span class="hljs-keyword">var</span> sparseTask = KeywordSearchAsync(query, tenantId, topK); <span class="hljs-comment">// BM25 / full-text</span>
+    <span class="hljs-keyword">await</span> Task.WhenAll(denseTask, sparseTask);
+    <span class="hljs-keyword">return</span> ReciprocalRankFusion([denseTask.Result, sparseTask.Result]).Take(topK).ToList();
+}</code></pre><h2>2.7 Reranking</h2>
+<p>Initial retrieval favors recall (candidates cheaply). A <strong>reranker</strong> — a <strong>cross-encoder</strong> that jointly encodes (query, chunk) — reorders the top ~50–100 for precision; keep the top ~5. Cross-encoders are far more accurate than bi-encoders but too slow for the whole corpus — hence two stages.</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// Two-stage retrieval: cheap recall (hybrid) -&gt; precise rerank -&gt; top N.</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">retrieve</span>(<span class="hljs-params"><span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">tenantId</span>: <span class="hljs-built_in">string</span>, finalK = <span class="hljs-number">5</span></span>): <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-title class_">Chunk</span>[]&gt; {
+  <span class="hljs-keyword">const</span> candidates = <span class="hljs-keyword">await</span> <span class="hljs-title function_">hybridSearch</span>(query, tenantId, <span class="hljs-number">50</span>);
+  <span class="hljs-keyword">if</span> (candidates.<span class="hljs-property">length</span> === <span class="hljs-number">0</span>) <span class="hljs-keyword">return</span> [];
+
+  <span class="hljs-keyword">const</span> reranked = <span class="hljs-keyword">await</span> cohere.<span class="hljs-title function_">rerank</span>({
+    <span class="hljs-attr">model</span>: <span class="hljs-string">&quot;rerank-v3.5&quot;</span>,
+    query,
+    <span class="hljs-attr">documents</span>: candidates.<span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">c</span>) =&gt;</span> c.<span class="hljs-property">content</span>),
+    <span class="hljs-attr">topN</span>: finalK,
+  });
+
+  <span class="hljs-comment">// Map reranked positions back to full chunk objects (preserve metadata/citations).</span>
+  <span class="hljs-keyword">return</span> reranked.<span class="hljs-property">results</span>.<span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">r</span>) =&gt;</span> ({ ...candidates[r.<span class="hljs-property">index</span>], <span class="hljs-attr">score</span>: r.<span class="hljs-property">relevanceScore</span> }));
+}</code></pre><p><strong>.NET / C#</strong> — two-stage retrieval: hybrid recall then cross-encoder rerank:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">async</span> Task&lt;List&lt;Chunk&gt;&gt; RetrieveAsync(
+    ICohereReranker cohere, <span class="hljs-built_in">string</span> query, <span class="hljs-built_in">string</span> tenantId, <span class="hljs-built_in">int</span> finalK = <span class="hljs-number">5</span>)
+{
+    <span class="hljs-keyword">var</span> candidates = <span class="hljs-keyword">await</span> HybridSearchAsync(query, tenantId, <span class="hljs-number">50</span>);
+    <span class="hljs-keyword">if</span> (candidates.Count == <span class="hljs-number">0</span>) <span class="hljs-keyword">return</span> [];
+
+    <span class="hljs-keyword">var</span> reranked = <span class="hljs-keyword">await</span> cohere.RerankAsync(<span class="hljs-keyword">new</span> RerankRequest
+    {
+        Model = <span class="hljs-string">&quot;rerank-v3.5&quot;</span>,
+        Query = query,
+        Documents = candidates.Select(c =&gt; c.Content).ToList(),
+        TopN = finalK
+    });
+
+    <span class="hljs-comment">// Map reranked positions back to full chunk objects (preserve metadata/citations).</span>
+    <span class="hljs-keyword">return</span> reranked.Results
+        .Select(r =&gt; candidates[r.Index] <span class="hljs-keyword">with</span> { Score = r.RelevanceScore })
+        .ToList();
+}</code></pre><h2>2.8 Query transformation</h2>
+<ul>
+<li><strong>Multi-query</strong> — generate paraphrases, retrieve for each, union/fuse.</li>
+<li><strong>HyDE</strong> — draft a hypothetical answer, embed <em>that</em>, retrieve against it.</li>
+<li><strong>Decomposition</strong> — split a complex question into sub-questions.</li>
+</ul>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// Multi-query expansion: paraphrase, retrieve per variant, fuse the lists.</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">multiQueryRetrieve</span>(<span class="hljs-params"><span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">tenantId</span>: <span class="hljs-built_in">string</span></span>): <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-title class_">Chunk</span>[]&gt; {
+  <span class="hljs-keyword">const</span> { <span class="hljs-built_in">object</span> } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateObject</span>({
+    <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4-mini&quot;</span>),
+    <span class="hljs-attr">schema</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">queries</span>: z.<span class="hljs-title function_">array</span>(z.<span class="hljs-title function_">string</span>()).<span class="hljs-title function_">length</span>(<span class="hljs-number">3</span>) }),
+    <span class="hljs-attr">prompt</span>: <span class="hljs-string">`Rewrite this question 3 different ways to maximize retrieval recall:\n<span class="hljs-subst">${query}</span>`</span>,
+  });
+
+  <span class="hljs-keyword">const</span> lists = <span class="hljs-keyword">await</span> <span class="hljs-title class_">Promise</span>.<span class="hljs-title function_">all</span>(
+    [query, ...<span class="hljs-built_in">object</span>.<span class="hljs-property">queries</span>].<span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">q</span>) =&gt;</span> <span class="hljs-title function_">hybridSearch</span>(q, tenantId, <span class="hljs-number">20</span>)),
+  );
+  <span class="hljs-keyword">return</span> <span class="hljs-title function_">reciprocalRankFusion</span>(lists).<span class="hljs-title function_">slice</span>(<span class="hljs-number">0</span>, <span class="hljs-number">20</span>);
+}</code></pre><p><strong>.NET / C#</strong> — multi-query expansion with typed output, then fuse:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-keyword">record</span> <span class="hljs-title">QueryExpansion</span>(<span class="hljs-title">string</span>[] <span class="hljs-title">Queries</span>);
+
+<span class="hljs-keyword">async</span> Task&lt;List&lt;Chunk&gt;&gt; MultiQueryRetrieveAsync(IChatClient chat, <span class="hljs-built_in">string</span> query, <span class="hljs-built_in">string</span> tenantId)
+{
+    <span class="hljs-keyword">var</span> expansion = (<span class="hljs-keyword">await</span> chat.GetResponseAsync&lt;QueryExpansion&gt;(
+        <span class="hljs-string">$&quot;Rewrite this question 3 different ways to maximize retrieval recall:\n<span class="hljs-subst">{query}</span>&quot;</span>)).Result;
+
+    <span class="hljs-keyword">var</span> variants = <span class="hljs-keyword">new</span>[] { query }.Concat(expansion.Queries);
+    <span class="hljs-keyword">var</span> lists = <span class="hljs-keyword">await</span> Task.WhenAll(variants.Select(q =&gt; HybridSearchAsync(q, tenantId, <span class="hljs-number">20</span>)));
+    <span class="hljs-keyword">return</span> ReciprocalRankFusion(lists).Take(<span class="hljs-number">20</span>).ToList();
+}</code></pre><h2>2.9 Advanced patterns</h2>
+<ul>
+<li><strong>Agentic RAG</strong> — the model treats retrieval as a <strong>tool</strong> it can call iteratively (search → read → refine → search). Where most production systems are heading.</li>
+<li><strong>Contextual Retrieval</strong> (Anthropic) — prepend an LLM-generated context blurb to each chunk before embedding; sharply reduces failed retrievals.</li>
+<li><strong>GraphRAG</strong> (Microsoft) — build a knowledge graph; retrieve via entities/communities for global &quot;summarize the corpus&quot; questions.</li>
+</ul>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// Agentic RAG: expose search as a tool so the model can iterate on its own.</span>
+<span class="hljs-keyword">const</span> searchKB = <span class="hljs-title function_">tool</span>({
+  <span class="hljs-attr">description</span>: <span class="hljs-string">&quot;Search the tenant knowledge base. Call repeatedly to refine the query.&quot;</span>,
+  <span class="hljs-attr">inputSchema</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">query</span>: z.<span class="hljs-title function_">string</span>() }),
+  <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> ({ query }) =&gt; <span class="hljs-title function_">retrieve</span>(query, currentTenantId, <span class="hljs-number">5</span>),
+});
+
+<span class="hljs-keyword">const</span> { text, steps } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateText</span>({
+  <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>),
+  <span class="hljs-attr">tools</span>: { searchKB },
+  <span class="hljs-attr">stopWhen</span>: <span class="hljs-title function_">stepCountIs</span>(<span class="hljs-number">4</span>),        <span class="hljs-comment">// bound the retrieve/refine loop</span>
+  <span class="hljs-attr">system</span>: <span class="hljs-string">&quot;Search as many times as needed, then answer with citations.&quot;</span>,
+  <span class="hljs-attr">prompt</span>: userQuestion,
+});</code></pre><p><strong>.NET / C#</strong> — Agentic RAG: expose search as a tool so the agent iterates on its own:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> System.ComponentModel;
+<span class="hljs-keyword">using</span> Microsoft.Agents.AI;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+[<span class="hljs-meta">Description(<span class="hljs-string">&quot;Search the tenant knowledge base. Call repeatedly to refine the query.&quot;</span>)</span>]
+<span class="hljs-keyword">async</span> Task&lt;IReadOnlyList&lt;Chunk&gt;&gt; SearchKb([Description(<span class="hljs-string">&quot;Search query&quot;</span>)] <span class="hljs-built_in">string</span> query)
+    =&gt; <span class="hljs-keyword">await</span> RetrieveAsync(query, currentTenantId, <span class="hljs-number">5</span>);
+
+AIAgent agent = chatClient.CreateAIAgent(
+    instructions: <span class="hljs-string">&quot;Search as many times as needed, then answer with citations.&quot;</span>,
+    tools: [AIFunctionFactory.Create(SearchKb)]);
+
+<span class="hljs-keyword">var</span> answer = <span class="hljs-keyword">await</span> agent.RunAsync(userQuestion);</code></pre><h2>2.10 Evaluating RAG</h2>
+<p>Evaluate <strong>retrieval</strong> and <strong>generation</strong> separately (RAGAS-style):</p>
+<ul>
+<li><strong>Context precision / recall</strong> — did retrieval return the right chunks (and rank them high)?</li>
+<li><strong>Faithfulness / groundedness</strong> — is the answer supported by the context?</li>
+<li><strong>Answer relevancy</strong> — does the answer address the question?</li>
+</ul>
+<p>Failure modes to name: bad chunking, embedding/query mismatch, no hybrid search for exact terms, no reranking, stale index, retrieved-but-ignored context, context overflow.</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// Faithfulness check: is every claim in the answer supported by the sources?</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">faithfulness</span>(<span class="hljs-params"><span class="hljs-attr">answerText</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">sources</span>: <span class="hljs-title class_">Chunk</span>[]</span>) {
+  <span class="hljs-keyword">const</span> { <span class="hljs-built_in">object</span> } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateObject</span>({
+    <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>),        <span class="hljs-comment">// judge model</span>
+    <span class="hljs-attr">schema</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">supported</span>: z.<span class="hljs-title function_">boolean</span>(), <span class="hljs-attr">unsupportedClaims</span>: z.<span class="hljs-title function_">array</span>(z.<span class="hljs-title function_">string</span>()) }),
+    <span class="hljs-attr">prompt</span>:
+      <span class="hljs-string">`Sources:\n<span class="hljs-subst">${sources.map((s) =&gt; s.content).join(<span class="hljs-string">&quot;\n&quot;</span>)}</span>\n\n`</span> +
+      <span class="hljs-string">`Answer:\n<span class="hljs-subst">${answerText}</span>\n\nList any claims NOT supported by the sources.`</span>,
+  });
+  <span class="hljs-keyword">return</span> <span class="hljs-built_in">object</span>; <span class="hljs-comment">// score = supported ? 1 : 0, plus the offending claims</span>
+}</code></pre><p><strong>.NET / C#</strong> — faithfulness check via typed judge output:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-keyword">record</span> <span class="hljs-title">Faithfulness</span>(<span class="hljs-title">bool</span> <span class="hljs-title">Supported</span>, <span class="hljs-title">string</span>[] <span class="hljs-title">UnsupportedClaims</span>);
+
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task&lt;Faithfulness&gt; <span class="hljs-title">CheckFaithfulnessAsync</span>(<span class="hljs-params">
+    IChatClient judge, <span class="hljs-built_in">string</span> answerText, IReadOnlyList&lt;Chunk&gt; sources</span>)</span>
+{
+    <span class="hljs-keyword">var</span> joined = <span class="hljs-built_in">string</span>.Join(<span class="hljs-string">&quot;\n&quot;</span>, sources.Select(s =&gt; s.Content));
+    <span class="hljs-keyword">return</span> (<span class="hljs-keyword">await</span> judge.GetResponseAsync&lt;Faithfulness&gt;(
+        <span class="hljs-string">$&quot;Sources:\n<span class="hljs-subst">{joined}</span>\n\nAnswer:\n<span class="hljs-subst">{answerText}</span>\n\n&quot;</span> +
+        <span class="hljs-string">&quot;List any claims NOT supported by the sources.&quot;</span>)).Result;
+}</code></pre><hr>
+<h1>Part 3 — Routing</h1>
+<h2>3.1 What &amp; why</h2>
+<p><strong>Routing</strong> classifies a request and directs it to the best handler — a specialized prompt, a specific model, a tool, or a sub-agent. It lets you optimize <strong>cost, latency, and quality</strong> simultaneously and keep prompts focused.</p>
+<h2>3.2 Types of routing</h2>
+<ul>
+<li><strong>Intent / semantic routing</strong> — classify (billing vs technical vs sales) → specialized flow.</li>
+<li><strong>Model routing</strong> — easy queries → small/cheap/fast model; hard → large model. A major cost lever.</li>
+<li><strong>Tool / capability routing</strong> — which tool or data source is relevant.</li>
+<li><strong>Retrieve-or-not routing</strong> — is RAG even needed?</li>
+<li><strong>Escalation routing</strong> — low-confidence/high-risk → human.</li>
+</ul>
+<h2>3.3 Implementation approaches &amp; best practices</h2>
+<ol>
+<li><strong>LLM classifier</strong> (flexible; force a valid label via structured output).</li>
+<li><strong>Embedding similarity</strong> (fast/cheap; nearest prototype route).</li>
+<li><strong>Rules / regex / metadata</strong> (deterministic, cheapest).</li>
+</ol>
+<p>Layer them: rules → embeddings → LLM fallback. <strong>Constrain output to an enum</strong>, handle the <strong>low-confidence</strong> case, keep the router <strong>cheap and fast</strong>, and <strong>log/evaluate</strong> routing decisions.</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-keyword">import</span> { generateObject, generateText } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;ai&quot;</span>;
+<span class="hljs-keyword">import</span> { z } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;zod&quot;</span>;
+
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">route</span>(<span class="hljs-params"><span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">const</span> { <span class="hljs-built_in">object</span> } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateObject</span>({
+    <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4-mini&quot;</span>), <span class="hljs-comment">// cheap, fast router</span>
+    <span class="hljs-attr">schema</span>: z.<span class="hljs-title function_">object</span>({
+      <span class="hljs-attr">category</span>: z.<span class="hljs-title function_">enum</span>([<span class="hljs-string">&quot;billing&quot;</span>, <span class="hljs-string">&quot;technical&quot;</span>, <span class="hljs-string">&quot;sales&quot;</span>, <span class="hljs-string">&quot;other&quot;</span>]),
+      <span class="hljs-attr">complexity</span>: z.<span class="hljs-title function_">enum</span>([<span class="hljs-string">&quot;simple&quot;</span>, <span class="hljs-string">&quot;hard&quot;</span>]),
+      <span class="hljs-attr">confidence</span>: z.<span class="hljs-title function_">number</span>().<span class="hljs-title function_">min</span>(<span class="hljs-number">0</span>).<span class="hljs-title function_">max</span>(<span class="hljs-number">1</span>),
+    }),
+    <span class="hljs-attr">prompt</span>: <span class="hljs-string">`Classify this request:\n<span class="hljs-subst">${query}</span>`</span>,
+  });
+
+  <span class="hljs-keyword">if</span> (<span class="hljs-built_in">object</span>.<span class="hljs-property">confidence</span> &lt; <span class="hljs-number">0.5</span>) <span class="hljs-keyword">return</span> <span class="hljs-title function_">escalateToHuman</span>(query); <span class="hljs-comment">// low-confidence fallback</span>
+
+  <span class="hljs-keyword">const</span> model = <span class="hljs-built_in">object</span>.<span class="hljs-property">complexity</span> === <span class="hljs-string">&quot;hard&quot;</span> ? <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>) : <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4-mini&quot;</span>);
+  <span class="hljs-keyword">const</span> system = {
+    <span class="hljs-attr">billing</span>: <span class="hljs-string">&quot;You are a billing specialist.&quot;</span>,
+    <span class="hljs-attr">technical</span>: <span class="hljs-string">&quot;You are a senior technical support engineer.&quot;</span>,
+    <span class="hljs-attr">sales</span>: <span class="hljs-string">&quot;You are a sales assistant.&quot;</span>,
+    <span class="hljs-attr">other</span>: <span class="hljs-string">&quot;You are a helpful general assistant.&quot;</span>,
+  }[<span class="hljs-built_in">object</span>.<span class="hljs-property">category</span>];
+
+  <span class="hljs-keyword">return</span> <span class="hljs-title function_">generateText</span>({ model, system, <span class="hljs-attr">prompt</span>: query }); <span class="hljs-comment">// model + prompt routing</span>
+}</code></pre><p><strong>.NET / C#</strong> — typed classification via <code>Microsoft.Extensions.AI</code>:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-keyword">public</span> <span class="hljs-built_in">enum</span> Category { Billing, Technical, Sales, Other }
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">record</span> <span class="hljs-title">Routing</span>(<span class="hljs-params">Category Category, <span class="hljs-built_in">bool</span> IsHard, <span class="hljs-built_in">double</span> Confidence</span>)</span>;
+
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task&lt;<span class="hljs-built_in">string</span>&gt; <span class="hljs-title">HandleAsync</span>(<span class="hljs-params">IChatClient chat, <span class="hljs-built_in">string</span> query</span>)</span>
+{
+    <span class="hljs-keyword">var</span> routing = (<span class="hljs-keyword">await</span> chat.GetResponseAsync&lt;Routing&gt;(
+        <span class="hljs-string">$&quot;Classify into category, difficulty, and confidence:\n<span class="hljs-subst">{query}</span>&quot;</span>)).Result;
+
+    <span class="hljs-keyword">if</span> (routing.Confidence &lt; <span class="hljs-number">0.5</span>) <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> EscalateAsync(query);
+
+    <span class="hljs-keyword">var</span> system = routing.Category <span class="hljs-keyword">switch</span>
+    {
+        Category.Billing   =&gt; <span class="hljs-string">&quot;You are a billing specialist.&quot;</span>,
+        Category.Technical =&gt; <span class="hljs-string">&quot;You are a senior support engineer.&quot;</span>,
+        Category.Sales     =&gt; <span class="hljs-string">&quot;You are a sales assistant.&quot;</span>,
+        _                  =&gt; <span class="hljs-string">&quot;You are a helpful assistant.&quot;</span>
+    };
+
+    <span class="hljs-keyword">var</span> answer = <span class="hljs-keyword">await</span> chat.GetResponseAsync(
+        [ <span class="hljs-keyword">new</span>(ChatRole.System, system), <span class="hljs-keyword">new</span>(ChatRole.User, query) ]);
+    <span class="hljs-keyword">return</span> answer.Text;
+}</code></pre><hr>
+<h1>Part 4 — Tool use / function calling</h1>
+<h2>4.1 How function calling works</h2>
+<pre class="code-block"><code>1. Send the model the user message + tool schemas (name, description, JSON-schema params).
+2. The model responds with text OR one/more tool calls (name + JSON arguments).
+3. Your runtime executes the tool(s) and appends the results to the conversation.
+4. Call the model again with the results; it calls more tools or produces a final answer.</code></pre><p>The <strong>model never executes anything</strong> — it only <em>requests</em> calls. Your code executes and stays in control (critical for security).</p>
+<h2>4.2 Designing tools — the Agent-Computer Interface (ACI)</h2>
+<ul>
+<li>Write tool descriptions like <strong>&quot;a great docstring for a junior developer.&quot;</strong></li>
+<li>Keep schemas <strong>simple and unambiguous</strong>; prefer formats the model has seen a lot.</li>
+<li><strong>&quot;Poka-yoke&quot;</strong> — design so misuse is hard (e.g., destructive actions need explicit confirmation).</li>
+<li>Return <strong>structured, informative results and errors</strong> so the model can self-correct.</li>
+<li><strong>Fewer, well-scoped tools</strong> beat many overlapping ones.</li>
+</ul>
+<pre class="code-block"><code class="language-ts"><span class="hljs-keyword">import</span> { generateText, tool, stepCountIs } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;ai&quot;</span>;
+<span class="hljs-keyword">import</span> { z } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;zod&quot;</span>;
+
+<span class="hljs-keyword">const</span> getWeather = <span class="hljs-title function_">tool</span>({
+  <span class="hljs-attr">description</span>: <span class="hljs-string">&quot;Get current weather for a city. Use when the user asks about weather.&quot;</span>,
+  <span class="hljs-attr">inputSchema</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">city</span>: z.<span class="hljs-title function_">string</span>().<span class="hljs-title function_">describe</span>(<span class="hljs-string">&#x27;City name, e.g. &quot;Madrid&quot;&#x27;</span>) }),
+  <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> ({ city }) =&gt; {
+    <span class="hljs-keyword">try</span> {
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> weatherApi.<span class="hljs-title function_">current</span>(city); <span class="hljs-comment">// structured result</span>
+    } <span class="hljs-keyword">catch</span> (e) {
+      <span class="hljs-keyword">return</span> { <span class="hljs-attr">error</span>: <span class="hljs-string">`Could not fetch weather for <span class="hljs-subst">${city}</span>. Ask the user to confirm the city.`</span> };
+    }
+  },
+});
+
+<span class="hljs-keyword">const</span> result = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateText</span>({
+  <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>),
+  <span class="hljs-attr">tools</span>: { getWeather },
+  <span class="hljs-attr">stopWhen</span>: <span class="hljs-title function_">stepCountIs</span>(<span class="hljs-number">5</span>),      <span class="hljs-comment">// loop control / guardrail</span>
+  <span class="hljs-attr">prompt</span>: <span class="hljs-string">&quot;What should I wear in Madrid today?&quot;</span>,
+});</code></pre><blockquote>
+<p><strong>v7 note:</strong> the same loop is encapsulated by <code>new ToolLoopAgent({ model, tools }).generate({ prompt })</code>, the current recommended abstraction; loop control uses <code>stopWhen</code> + <code>prepareStep</code>.</p>
+</blockquote>
+<p><strong>.NET / C#</strong> — automatic function invocation:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+<span class="hljs-keyword">using</span> System.ComponentModel;
+
+[<span class="hljs-meta">Description(<span class="hljs-string">&quot;Get the current weather for a city.&quot;</span>)</span>]
+<span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-built_in">string</span> <span class="hljs-title">GetWeather</span>(<span class="hljs-params">[Description(<span class="hljs-string">&quot;City name, e.g. Madrid&quot;</span></span>)] <span class="hljs-built_in">string</span> city)</span>
+    =&gt; <span class="hljs-string">$&quot;<span class="hljs-subst">{city}</span>: 21C, sunny&quot;</span>;
+
+IChatClient chat = baseClient
+    .AsBuilder()
+    .UseFunctionInvocation() <span class="hljs-comment">// runs the tool loop automatically</span>
+    .Build();
+
+<span class="hljs-keyword">var</span> options = <span class="hljs-keyword">new</span> ChatOptions { Tools = [ AIFunctionFactory.Create(GetWeather) ] };
+<span class="hljs-keyword">var</span> response = <span class="hljs-keyword">await</span> chat.GetResponseAsync(<span class="hljs-string">&quot;What should I wear in Madrid today?&quot;</span>, options);</code></pre><h2>4.3 Parallel calls, structured outputs, error handling</h2>
+<ul>
+<li>Models can emit <strong>multiple tool calls per turn</strong> — execute independent ones concurrently.</li>
+<li><strong>Structured outputs</strong> (JSON-schema-constrained) guarantee parseable results — use instead of &quot;please return JSON&quot;.</li>
+<li><strong>Validate arguments</strong>, set <strong>timeouts</strong>, <strong>retry</strong> transient failures, cap the loop with <strong>max-step/budget</strong>, make tools <strong>idempotent</strong>.</li>
+</ul>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// Validate + guard a side-effecting tool; return a clear error the model can act on.</span>
+<span class="hljs-keyword">const</span> refund = <span class="hljs-title function_">tool</span>({
+  <span class="hljs-attr">description</span>: <span class="hljs-string">&quot;Issue a refund. Requires an explicit confirm=true to prevent accidental refunds.&quot;</span>,
+  <span class="hljs-attr">inputSchema</span>: z.<span class="hljs-title function_">object</span>({
+    <span class="hljs-attr">orderId</span>: z.<span class="hljs-title function_">string</span>(),
+    <span class="hljs-attr">amount</span>: z.<span class="hljs-title function_">number</span>().<span class="hljs-title function_">positive</span>(),
+    <span class="hljs-attr">confirm</span>: z.<span class="hljs-title function_">literal</span>(<span class="hljs-literal">true</span>).<span class="hljs-title function_">describe</span>(<span class="hljs-string">&quot;Must be true; ask the user to confirm first.&quot;</span>),
+  }),
+  <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> ({ orderId, amount }) =&gt; {
+    <span class="hljs-keyword">const</span> order = <span class="hljs-keyword">await</span> orders.<span class="hljs-title function_">get</span>(orderId);
+    <span class="hljs-keyword">if</span> (!order) <span class="hljs-keyword">return</span> { <span class="hljs-attr">error</span>: <span class="hljs-string">&quot;Order not found.&quot;</span> };
+    <span class="hljs-keyword">if</span> (amount &gt; order.<span class="hljs-property">total</span>) <span class="hljs-keyword">return</span> { <span class="hljs-attr">error</span>: <span class="hljs-string">&quot;Refund exceeds order total.&quot;</span> };
+    <span class="hljs-keyword">return</span> payments.<span class="hljs-title function_">refund</span>(orderId, amount); <span class="hljs-comment">// idempotent by orderId</span>
+  },
+});</code></pre><p><strong>.NET / C#</strong> — a guarded, side-effecting tool that returns clear errors the model can act on:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> System.ComponentModel;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+[<span class="hljs-meta">Description(<span class="hljs-string">&quot;Issue a refund. Requires confirm=true to prevent accidental refunds.&quot;</span>)</span>]
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task&lt;<span class="hljs-built_in">object</span>&gt; <span class="hljs-title">Refund</span>(<span class="hljs-params">
+    [Description(<span class="hljs-string">&quot;Order id&quot;</span></span>)] <span class="hljs-built_in">string</span> orderId,
+    [<span class="hljs-title">Description</span>(<span class="hljs-params"><span class="hljs-string">&quot;Positive amount to refund&quot;</span></span>)] <span class="hljs-built_in">decimal</span> amount,
+    [<span class="hljs-title">Description</span>(<span class="hljs-params"><span class="hljs-string">&quot;Must be true; ask the user to confirm first.&quot;</span></span>)] <span class="hljs-built_in">bool</span> confirm)</span>
+{
+    <span class="hljs-keyword">if</span> (!confirm) <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> { error = <span class="hljs-string">&quot;Set confirm=true after the user confirms.&quot;</span> };
+    <span class="hljs-keyword">var</span> order = <span class="hljs-keyword">await</span> Orders.GetAsync(orderId);
+    <span class="hljs-keyword">if</span> (order <span class="hljs-keyword">is</span> <span class="hljs-literal">null</span>)       <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> { error = <span class="hljs-string">&quot;Order not found.&quot;</span> };
+    <span class="hljs-keyword">if</span> (amount &gt; order.Total) <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> { error = <span class="hljs-string">&quot;Refund exceeds order total.&quot;</span> };
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> Payments.RefundAsync(orderId, amount); <span class="hljs-comment">// idempotent by orderId</span>
+}
+
+<span class="hljs-keyword">var</span> options = <span class="hljs-keyword">new</span> ChatOptions { Tools = [AIFunctionFactory.Create(Refund)] };</code></pre><h2>4.4 Model Context Protocol (MCP)</h2>
+<p><strong>MCP</strong> is an open standard (Anthropic, late 2024; broad adoption 2025–2026) for connecting AI apps to external tools/data — <em>&quot;a USB-C port for AI apps.&quot;</em> Build once, reuse across clients (Claude, ChatGPT, VS Code, Cursor, …).</p>
+<ul>
+<li><strong>Host</strong> (the AI app) → <strong>Client</strong> (1:1 connection) → <strong>Server</strong> (exposes capabilities).</li>
+<li><strong>Primitives:</strong> <strong>tools</strong> (actions), <strong>resources</strong> (readable data/context), <strong>prompts</strong> (reusable templates).</li>
+<li><strong>Transports:</strong> local <strong>stdio</strong>, remote <strong>streamable HTTP</strong>.</li>
+</ul>
+<p>MCP decouples <em>tool/data providers</em> from <em>agent applications</em>: a provider ships one server; every MCP-capable client can use it.</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// TypeScript — consume an MCP server&#x27;s tools with the AI SDK.</span>
+<span class="hljs-keyword">import</span> { experimental_createMCPClient <span class="hljs-keyword">as</span> createMCPClient, generateText, stepCountIs } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;ai&quot;</span>;
+
+<span class="hljs-keyword">const</span> mcp = <span class="hljs-keyword">await</span> <span class="hljs-title function_">createMCPClient</span>({
+  <span class="hljs-attr">transport</span>: { <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;stdio&quot;</span>, <span class="hljs-attr">command</span>: <span class="hljs-string">&quot;npx&quot;</span>, <span class="hljs-attr">args</span>: [<span class="hljs-string">&quot;-y&quot;</span>, <span class="hljs-string">&quot;@modelcontextprotocol/server-filesystem&quot;</span>, <span class="hljs-string">&quot;./data&quot;</span>] },
+});
+<span class="hljs-keyword">const</span> mcpTools = <span class="hljs-keyword">await</span> mcp.<span class="hljs-title function_">tools</span>();
+
+<span class="hljs-keyword">const</span> { text } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateText</span>({
+  <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>),
+  <span class="hljs-attr">tools</span>: mcpTools,               <span class="hljs-comment">// MCP tools used exactly like native tools</span>
+  <span class="hljs-attr">stopWhen</span>: <span class="hljs-title function_">stepCountIs</span>(<span class="hljs-number">5</span>),
+  <span class="hljs-attr">prompt</span>: <span class="hljs-string">&quot;Summarize the newest markdown file in ./data.&quot;</span>,
+});
+<span class="hljs-keyword">await</span> mcp.<span class="hljs-title function_">close</span>();</code></pre><pre class="code-block"><code class="language-csharp"><span class="hljs-comment">// .NET — expose an MCP server&#x27;s tools to a Microsoft Agent Framework agent.</span>
+<span class="hljs-keyword">using</span> Microsoft.Agents.AI;
+<span class="hljs-keyword">using</span> ModelContextProtocol.Client;
+
+<span class="hljs-keyword">await</span> <span class="hljs-keyword">using</span> <span class="hljs-keyword">var</span> mcp = <span class="hljs-keyword">await</span> McpClient.CreateAsync(<span class="hljs-keyword">new</span> StdioClientTransport(<span class="hljs-keyword">new</span>()
+{
+    Command = <span class="hljs-string">&quot;npx&quot;</span>,
+    Arguments = [<span class="hljs-string">&quot;-y&quot;</span>, <span class="hljs-string">&quot;@modelcontextprotocol/server-filesystem&quot;</span>, <span class="hljs-string">&quot;./data&quot;</span>]
+}));
+<span class="hljs-keyword">var</span> tools = <span class="hljs-keyword">await</span> mcp.ListToolsAsync();
+
+AIAgent agent = chatClient.CreateAIAgent(
+    instructions: <span class="hljs-string">&quot;Use the file tools when asked about files.&quot;</span>,
+    tools: [.. tools]);
+
+Console.WriteLine(<span class="hljs-keyword">await</span> agent.RunAsync(<span class="hljs-string">&quot;List the markdown files in the data folder.&quot;</span>));</code></pre><h2>4.5 Guardrails around tools</h2>
+<ul>
+<li><strong>Least privilege</strong> — scope credentials per tool; never hand the model raw secrets.</li>
+<li><strong>Human-in-the-loop / approval</strong> for high-risk actions (payments, deletes, external sends).</li>
+<li><strong>Sandboxing</strong> for code/file access; <strong>allow/deny lists</strong>; rate limits.</li>
+</ul>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// Human-in-the-loop gate: pause the agent for approval before risky actions.</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">guardedExecute</span>(<span class="hljs-params"><span class="hljs-attr">call</span>: <span class="hljs-title class_">ToolCall</span>, <span class="hljs-attr">ctx</span>: <span class="hljs-title class_">Ctx</span></span>) {
+  <span class="hljs-keyword">const</span> <span class="hljs-variable constant_">HIGH_RISK</span> = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Set</span>([<span class="hljs-string">&quot;refund&quot;</span>, <span class="hljs-string">&quot;deleteAccount&quot;</span>, <span class="hljs-string">&quot;sendEmail&quot;</span>]);
+  <span class="hljs-keyword">if</span> (<span class="hljs-variable constant_">HIGH_RISK</span>.<span class="hljs-title function_">has</span>(call.<span class="hljs-property">name</span>)) {
+    <span class="hljs-keyword">const</span> approval = <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">requestHumanApproval</span>(call); <span class="hljs-comment">// blocks until approved/denied</span>
+    <span class="hljs-keyword">if</span> (!approval.<span class="hljs-property">approved</span>) <span class="hljs-keyword">return</span> { <span class="hljs-attr">error</span>: <span class="hljs-string">&quot;Action denied by human reviewer.&quot;</span> };
+  }
+  <span class="hljs-keyword">return</span> tools[call.<span class="hljs-property">name</span>].<span class="hljs-title function_">execute</span>(call.<span class="hljs-property">args</span>);
+}</code></pre><p><strong>.NET / C#</strong> — wrap tools with a human-in-the-loop approval gate. Agent Framework also
+supports <code>FunctionApprovalRequest</code>/<code>FunctionApprovalResponse</code> for built-in approvals:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-keyword">static</span> <span class="hljs-keyword">readonly</span> HashSet&lt;<span class="hljs-built_in">string</span>&gt; HighRisk = [<span class="hljs-string">&quot;refund&quot;</span>, <span class="hljs-string">&quot;deleteAccount&quot;</span>, <span class="hljs-string">&quot;sendEmail&quot;</span>];
+
+<span class="hljs-comment">// Human-in-the-loop gate: pause before risky actions.</span>
+<span class="hljs-function">AIFunction <span class="hljs-title">Guarded</span>(<span class="hljs-params">AIFunction inner, IApprovalContext ctx</span>)</span> =&gt;
+    AIFunctionFactory.Create(<span class="hljs-keyword">async</span> (AIFunctionArguments <span class="hljs-keyword">args</span>, CancellationToken ct) =&gt;
+    {
+        <span class="hljs-keyword">if</span> (HighRisk.Contains(inner.Name))
+        {
+            <span class="hljs-keyword">var</span> approval = <span class="hljs-keyword">await</span> ctx.RequestHumanApprovalAsync(inner.Name, <span class="hljs-keyword">args</span>); <span class="hljs-comment">// blocks</span>
+            <span class="hljs-keyword">if</span> (!approval.Approved) <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;Action denied by human reviewer.&quot;</span>;
+        }
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> inner.InvokeAsync(<span class="hljs-keyword">args</span>, ct);
+    }, inner.Name, inner.Description);</code></pre><hr>
+<h1>Part 5 — Agent architectures &amp; workflow patterns</h1>
+<p>Anthropic&#39;s five composable <strong>workflow</strong> patterns plus the autonomous <strong>agent</strong> — the vocabulary interviewers use.</p>
+<h2>5.1 Prompt chaining</h2>
+<p>Decompose into a fixed sequence; each call feeds the next, with optional programmatic <strong>gates</strong>. Trades latency for accuracy.</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">writeArticle</span>(<span class="hljs-params"><span class="hljs-attr">topic</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">const</span> outline = <span class="hljs-keyword">await</span> <span class="hljs-title function_">llm</span>(<span class="hljs-string">`Outline a short article about: <span class="hljs-subst">${topic}</span>`</span>);
+
+  <span class="hljs-comment">// GATE: cheap programmatic check before spending more tokens.</span>
+  <span class="hljs-keyword">if</span> (outline.<span class="hljs-title function_">split</span>(<span class="hljs-string">&quot;\n&quot;</span>).<span class="hljs-title function_">filter</span>(<span class="hljs-title class_">Boolean</span>).<span class="hljs-property">length</span> &lt; <span class="hljs-number">3</span>) {
+    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Error</span>(<span class="hljs-string">&quot;Outline too thin; aborting chain.&quot;</span>);
+  }
+
+  <span class="hljs-keyword">const</span> draft = <span class="hljs-keyword">await</span> <span class="hljs-title function_">llm</span>(<span class="hljs-string">`Write the article from this outline:\n<span class="hljs-subst">${outline}</span>`</span>);
+  <span class="hljs-keyword">return</span> <span class="hljs-title function_">llm</span>(<span class="hljs-string">`Tighten prose and fix grammar, keep meaning:\n<span class="hljs-subst">${draft}</span>`</span>);
+}</code></pre><p><strong>.NET / C#</strong> — prompt chaining with a programmatic gate:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task&lt;<span class="hljs-built_in">string</span>&gt; <span class="hljs-title">WriteArticleAsync</span>(<span class="hljs-params">IChatClient chat, <span class="hljs-built_in">string</span> topic</span>)</span>
+{
+    <span class="hljs-keyword">var</span> outline = (<span class="hljs-keyword">await</span> chat.GetResponseAsync(<span class="hljs-string">$&quot;Outline a short article about: <span class="hljs-subst">{topic}</span>&quot;</span>)).Text;
+
+    <span class="hljs-comment">// GATE: cheap programmatic check before spending more tokens.</span>
+    <span class="hljs-keyword">if</span> (outline.Split(<span class="hljs-string">&#x27;\n&#x27;</span>).Count(l =&gt; l.Length &gt; <span class="hljs-number">0</span>) &lt; <span class="hljs-number">3</span>)
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> InvalidOperationException(<span class="hljs-string">&quot;Outline too thin; aborting chain.&quot;</span>);
+
+    <span class="hljs-keyword">var</span> draft = (<span class="hljs-keyword">await</span> chat.GetResponseAsync(<span class="hljs-string">$&quot;Write the article from this outline:\n<span class="hljs-subst">{outline}</span>&quot;</span>)).Text;
+    <span class="hljs-keyword">return</span> (<span class="hljs-keyword">await</span> chat.GetResponseAsync(<span class="hljs-string">$&quot;Tighten prose and fix grammar, keep meaning:\n<span class="hljs-subst">{draft}</span>&quot;</span>)).Text;
+}</code></pre><h2>5.2 Routing</h2>
+<p>Classify input, dispatch to a specialized follow-up (see Part 3).</p>
+<h2>5.3 Parallelization</h2>
+<ul>
+<li><strong>Sectioning</strong> — split independent subtasks, run in parallel, merge (speed).</li>
+<li><strong>Voting</strong> — run the same task N times, aggregate (confidence).</li>
+</ul>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// SECTIONING: independent reviews in parallel, then merge.</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">reviewPR</span>(<span class="hljs-params"><span class="hljs-attr">diff</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">const</span> [security, style, tests] = <span class="hljs-keyword">await</span> <span class="hljs-title class_">Promise</span>.<span class="hljs-title function_">all</span>([
+    <span class="hljs-title function_">llm</span>(<span class="hljs-string">`Review for SECURITY issues only:\n<span class="hljs-subst">${diff}</span>`</span>),
+    <span class="hljs-title function_">llm</span>(<span class="hljs-string">`Review for STYLE issues only:\n<span class="hljs-subst">${diff}</span>`</span>),
+    <span class="hljs-title function_">llm</span>(<span class="hljs-string">`Review for MISSING TESTS only:\n<span class="hljs-subst">${diff}</span>`</span>),
+  ]);
+  <span class="hljs-keyword">return</span> { security, style, tests };
+}
+
+<span class="hljs-comment">// VOTING: run N times, take the majority verdict (reduces variance on hard calls).</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">isToxic</span>(<span class="hljs-params"><span class="hljs-attr">text</span>: <span class="hljs-built_in">string</span>, n = <span class="hljs-number">5</span></span>): <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-built_in">boolean</span>&gt; {
+  <span class="hljs-keyword">const</span> votes = <span class="hljs-keyword">await</span> <span class="hljs-title class_">Promise</span>.<span class="hljs-title function_">all</span>(
+    <span class="hljs-title class_">Array</span>.<span class="hljs-title function_">from</span>({ <span class="hljs-attr">length</span>: n }, <span class="hljs-function">() =&gt;</span>
+      <span class="hljs-title function_">generateObject</span>({
+        <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4-mini&quot;</span>),
+        <span class="hljs-attr">schema</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">toxic</span>: z.<span class="hljs-title function_">boolean</span>() }),
+        <span class="hljs-attr">prompt</span>: <span class="hljs-string">`Is this text toxic?\n<span class="hljs-subst">${text}</span>`</span>,
+      }).<span class="hljs-title function_">then</span>(<span class="hljs-function">(<span class="hljs-params">r</span>) =&gt;</span> r.<span class="hljs-property">object</span>.<span class="hljs-property">toxic</span>)),
+  );
+  <span class="hljs-keyword">return</span> votes.<span class="hljs-title function_">filter</span>(<span class="hljs-title class_">Boolean</span>).<span class="hljs-property">length</span> &gt; n / <span class="hljs-number">2</span>;
+}</code></pre><p><strong>.NET / C#</strong> — sectioning (parallel) and voting (majority):</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-comment">// SECTIONING: independent reviews in parallel, then merge.</span>
+<span class="hljs-keyword">async</span> Task&lt;(<span class="hljs-built_in">string</span> Security, <span class="hljs-built_in">string</span> Style, <span class="hljs-built_in">string</span> Tests)&gt; ReviewPrAsync(IChatClient chat, <span class="hljs-built_in">string</span> diff)
+{
+    <span class="hljs-keyword">var</span> security = chat.GetResponseAsync(<span class="hljs-string">$&quot;Review for SECURITY issues only:\n<span class="hljs-subst">{diff}</span>&quot;</span>);
+    <span class="hljs-keyword">var</span> style    = chat.GetResponseAsync(<span class="hljs-string">$&quot;Review for STYLE issues only:\n<span class="hljs-subst">{diff}</span>&quot;</span>);
+    <span class="hljs-keyword">var</span> tests    = chat.GetResponseAsync(<span class="hljs-string">$&quot;Review for MISSING TESTS only:\n<span class="hljs-subst">{diff}</span>&quot;</span>);
+    <span class="hljs-keyword">await</span> Task.WhenAll(security, style, tests);
+    <span class="hljs-keyword">return</span> (security.Result.Text, style.Result.Text, tests.Result.Text);
+}
+
+<span class="hljs-keyword">record</span> <span class="hljs-title">ToxicVerdict</span>(<span class="hljs-title">bool</span> <span class="hljs-title">Toxic</span>);
+
+<span class="hljs-comment">// VOTING: run N times, take the majority verdict.</span>
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task&lt;<span class="hljs-built_in">bool</span>&gt; <span class="hljs-title">IsToxicAsync</span>(<span class="hljs-params">IChatClient chat, <span class="hljs-built_in">string</span> text, <span class="hljs-built_in">int</span> n = <span class="hljs-number">5</span></span>)</span>
+{
+    <span class="hljs-keyword">var</span> votes = <span class="hljs-keyword">await</span> Task.WhenAll(Enumerable.Range(<span class="hljs-number">0</span>, n).Select(<span class="hljs-keyword">async</span> _ =&gt;
+        (<span class="hljs-keyword">await</span> chat.GetResponseAsync&lt;ToxicVerdict&gt;(<span class="hljs-string">$&quot;Is this text toxic?\n<span class="hljs-subst">{text}</span>&quot;</span>)).Result.Toxic));
+    <span class="hljs-keyword">return</span> votes.Count(v =&gt; v) &gt; n / <span class="hljs-number">2</span>;
+}</code></pre><h2>5.4 Orchestrator–workers</h2>
+<p>A central <strong>orchestrator</strong> dynamically decomposes a task, delegates to <strong>workers</strong>, and synthesizes results. Subtasks are <strong>not known in advance</strong>.</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">orchestrate</span>(<span class="hljs-params"><span class="hljs-attr">task</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-comment">// 1. Orchestrator decomposes dynamically.</span>
+  <span class="hljs-keyword">const</span> { <span class="hljs-built_in">object</span> } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateObject</span>({
+    <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>),
+    <span class="hljs-attr">schema</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">subtasks</span>: z.<span class="hljs-title function_">array</span>(z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">id</span>: z.<span class="hljs-title function_">string</span>(), <span class="hljs-attr">instruction</span>: z.<span class="hljs-title function_">string</span>() })) }),
+    <span class="hljs-attr">prompt</span>: <span class="hljs-string">`Break this task into independent subtasks:\n<span class="hljs-subst">${task}</span>`</span>,
+  });
+
+  <span class="hljs-comment">// 2. Workers run in parallel.</span>
+  <span class="hljs-keyword">const</span> results = <span class="hljs-keyword">await</span> <span class="hljs-title class_">Promise</span>.<span class="hljs-title function_">all</span>(
+    <span class="hljs-built_in">object</span>.<span class="hljs-property">subtasks</span>.<span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">s</span>) =&gt;</span>
+      <span class="hljs-title function_">generateText</span>({ <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>), <span class="hljs-attr">prompt</span>: s.<span class="hljs-property">instruction</span> })
+        .<span class="hljs-title function_">then</span>(<span class="hljs-function">(<span class="hljs-params">r</span>) =&gt;</span> ({ <span class="hljs-attr">id</span>: s.<span class="hljs-property">id</span>, <span class="hljs-attr">output</span>: r.<span class="hljs-property">text</span> }))),
+  );
+
+  <span class="hljs-comment">// 3. Orchestrator synthesizes.</span>
+  <span class="hljs-keyword">const</span> { text } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateText</span>({
+    <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>),
+    <span class="hljs-attr">prompt</span>: <span class="hljs-string">`Task: <span class="hljs-subst">${task}</span>\n\nWorker outputs:\n<span class="hljs-subst">${<span class="hljs-built_in">JSON</span>.stringify(results)}</span>\n\nSynthesize the final answer.`</span>,
+  });
+  <span class="hljs-keyword">return</span> text;
+}</code></pre><p><strong>.NET / C#</strong> — orchestrator dynamically decomposes, workers run in parallel, orchestrator synthesizes.
+Agent Framework also ships typed graph <strong>workflows</strong> for this pattern:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> System.Text.Json;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-keyword">record</span> <span class="hljs-title">Subtask</span>(<span class="hljs-title">string</span> <span class="hljs-title">Id</span>, <span class="hljs-title">string</span> <span class="hljs-title">Instruction</span>);
+<span class="hljs-keyword">record</span> <span class="hljs-title">Plan</span>(<span class="hljs-title">Subtask</span>[] <span class="hljs-title">Subtasks</span>);
+
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task&lt;<span class="hljs-built_in">string</span>&gt; <span class="hljs-title">OrchestrateAsync</span>(<span class="hljs-params">IChatClient chat, <span class="hljs-built_in">string</span> task</span>)</span>
+{
+    <span class="hljs-comment">// 1. Orchestrator decomposes dynamically.</span>
+    <span class="hljs-keyword">var</span> plan = (<span class="hljs-keyword">await</span> chat.GetResponseAsync&lt;Plan&gt;(
+        <span class="hljs-string">$&quot;Break this task into independent subtasks:\n<span class="hljs-subst">{task}</span>&quot;</span>)).Result;
+
+    <span class="hljs-comment">// 2. Workers run in parallel.</span>
+    <span class="hljs-keyword">var</span> results = <span class="hljs-keyword">await</span> Task.WhenAll(plan.Subtasks.Select(<span class="hljs-keyword">async</span> s =&gt;
+        <span class="hljs-keyword">new</span> { s.Id, Output = (<span class="hljs-keyword">await</span> chat.GetResponseAsync(s.Instruction)).Text }));
+
+    <span class="hljs-comment">// 3. Orchestrator synthesizes.</span>
+    <span class="hljs-keyword">return</span> (<span class="hljs-keyword">await</span> chat.GetResponseAsync(
+        <span class="hljs-string">$&quot;Task: <span class="hljs-subst">{task}</span>\n\nWorker outputs:\n<span class="hljs-subst">{JsonSerializer.Serialize(results)}</span>\n\n&quot;</span> +
+        <span class="hljs-string">&quot;Synthesize the final answer.&quot;</span>)).Text;
+}</code></pre><h2>5.5 Evaluator–optimizer</h2>
+<p>A <strong>generator</strong> produces a candidate; an <strong>evaluator</strong> critiques against explicit criteria; loop until it passes.</p>
+<pre class="code-block"><code>generate --&gt; evaluate --(pass?)--&gt; done
+   ^                          |
+   +--------- feedback &lt;-------+ (fail)</code></pre><pre class="code-block"><code class="language-ts"><span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">generateWithFeedback</span>(<span class="hljs-params"><span class="hljs-attr">task</span>: <span class="hljs-built_in">string</span>, maxRounds = <span class="hljs-number">3</span></span>) {
+  <span class="hljs-keyword">let</span> candidate = <span class="hljs-keyword">await</span> <span class="hljs-title function_">llm</span>(<span class="hljs-string">`Complete the task:\n<span class="hljs-subst">${task}</span>`</span>);
+
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> round = <span class="hljs-number">0</span>; round &lt; maxRounds; round++) {
+    <span class="hljs-keyword">const</span> { <span class="hljs-attr">object</span>: verdict } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateObject</span>({
+      <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>),
+      <span class="hljs-attr">schema</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">pass</span>: z.<span class="hljs-title function_">boolean</span>(), <span class="hljs-attr">feedback</span>: z.<span class="hljs-title function_">string</span>() }),
+      <span class="hljs-attr">prompt</span>: <span class="hljs-string">`Task: <span class="hljs-subst">${task}</span>\n\nCandidate:\n<span class="hljs-subst">${candidate}</span>\n\nDoes it fully meet the criteria?`</span>,
+    });
+    <span class="hljs-keyword">if</span> (verdict.<span class="hljs-property">pass</span>) <span class="hljs-keyword">return</span> candidate;
+    candidate = <span class="hljs-keyword">await</span> <span class="hljs-title function_">llm</span>(
+      <span class="hljs-string">`Task:\n<span class="hljs-subst">${task}</span>\n\nPrevious attempt:\n<span class="hljs-subst">${candidate}</span>\n\nApply this feedback:\n<span class="hljs-subst">${verdict.feedback}</span>`</span>);
+  }
+  <span class="hljs-keyword">return</span> candidate; <span class="hljs-comment">// best effort after the budget</span>
+}</code></pre><p><strong>.NET / C#</strong> — evaluator–optimizer loop with a typed verdict:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-keyword">record</span> <span class="hljs-title">Verdict</span>(<span class="hljs-title">bool</span> <span class="hljs-title">Pass</span>, <span class="hljs-title">string</span> <span class="hljs-title">Feedback</span>);
+
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task&lt;<span class="hljs-built_in">string</span>&gt; <span class="hljs-title">GenerateWithFeedbackAsync</span>(<span class="hljs-params">IChatClient chat, <span class="hljs-built_in">string</span> task, <span class="hljs-built_in">int</span> maxRounds = <span class="hljs-number">3</span></span>)</span>
+{
+    <span class="hljs-keyword">var</span> candidate = (<span class="hljs-keyword">await</span> chat.GetResponseAsync(<span class="hljs-string">$&quot;Complete the task:\n<span class="hljs-subst">{task}</span>&quot;</span>)).Text;
+
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> round = <span class="hljs-number">0</span>; round &lt; maxRounds; round++)
+    {
+        <span class="hljs-keyword">var</span> verdict = (<span class="hljs-keyword">await</span> chat.GetResponseAsync&lt;Verdict&gt;(
+            <span class="hljs-string">$&quot;Task: <span class="hljs-subst">{task}</span>\n\nCandidate:\n<span class="hljs-subst">{candidate}</span>\n\nDoes it fully meet the criteria?&quot;</span>)).Result;
+        <span class="hljs-keyword">if</span> (verdict.Pass) <span class="hljs-keyword">return</span> candidate;
+        candidate = (<span class="hljs-keyword">await</span> chat.GetResponseAsync(
+            <span class="hljs-string">$&quot;Task:\n<span class="hljs-subst">{task}</span>\n\nPrevious attempt:\n<span class="hljs-subst">{candidate}</span>\n\nApply this feedback:\n<span class="hljs-subst">{verdict.Feedback}</span>&quot;</span>)).Text;
+    }
+    <span class="hljs-keyword">return</span> candidate; <span class="hljs-comment">// best effort after the budget</span>
+}</code></pre><h2>5.6 Autonomous agent</h2>
+<p>The model plans and acts in an open-ended loop using <strong>environmental feedback</strong>, deciding its own steps until done or stopped. Use for open-ended tasks in <strong>trusted, sandboxed</strong> environments with <strong>guardrails</strong> and a <strong>stop condition</strong>.</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-keyword">import</span> { generateText, stepCountIs } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;ai&quot;</span>;
+
+<span class="hljs-keyword">const</span> result = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateText</span>({
+  <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>),
+  <span class="hljs-attr">tools</span>: { webSearch, runCode, writeFile, openPR },
+  <span class="hljs-attr">stopWhen</span>: <span class="hljs-title function_">stepCountIs</span>(<span class="hljs-number">15</span>),        <span class="hljs-comment">// hard guardrail on the loop</span>
+  <span class="hljs-attr">system</span>: <span class="hljs-string">&quot;Work autonomously. Plan, act, verify each step. Stop when the goal is met.&quot;</span>,
+  <span class="hljs-attr">prompt</span>: <span class="hljs-string">&quot;Investigate the failing CI build and open a fix PR.&quot;</span>,
+});</code></pre><p><strong>.NET / C#</strong> — an autonomous <code>AIAgent</code> that plans and acts until the goal is met:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Agents.AI;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+AIAgent agent = chatClient.CreateAIAgent(
+    instructions: <span class="hljs-string">&quot;Work autonomously. Plan, act, verify each step. Stop when the goal is met.&quot;</span>,
+    tools: [
+        AIFunctionFactory.Create(WebSearch),
+        AIFunctionFactory.Create(RunCode),
+        AIFunctionFactory.Create(WriteFile),
+        AIFunctionFactory.Create(OpenPr)
+    ]);
+
+<span class="hljs-keyword">var</span> result = <span class="hljs-keyword">await</span> agent.RunAsync(<span class="hljs-string">&quot;Investigate the failing CI build and open a fix PR.&quot;</span>);</code></pre><h2>5.7 Planning &amp; reasoning strategies</h2>
+<ul>
+<li><strong>ReAct</strong> — interleave reasoning and tool actions (the default).</li>
+<li><strong>Plan-and-Execute</strong> — plan up front, then execute (fewer calls, better for long tasks; less adaptive).</li>
+<li><strong>Reflection / Reflexion</strong> — the agent critiques its own trajectory and retries.</li>
+<li><strong>Tree/graph search</strong> — explore branches, pick the best (expensive).</li>
+</ul>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// Plan-and-Execute: generate a plan once, then execute steps in order.</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">planAndExecute</span>(<span class="hljs-params"><span class="hljs-attr">goal</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">const</span> { <span class="hljs-attr">object</span>: plan } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateObject</span>({
+    <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>),
+    <span class="hljs-attr">schema</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">steps</span>: z.<span class="hljs-title function_">array</span>(z.<span class="hljs-title function_">string</span>()) }),
+    <span class="hljs-attr">prompt</span>: <span class="hljs-string">`Produce a concise ordered plan to achieve:\n<span class="hljs-subst">${goal}</span>`</span>,
+  });
+
+  <span class="hljs-keyword">const</span> <span class="hljs-attr">log</span>: <span class="hljs-built_in">string</span>[] = [];
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> step <span class="hljs-keyword">of</span> plan.<span class="hljs-property">steps</span>) {
+    <span class="hljs-keyword">const</span> { text } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateText</span>({
+      <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>),
+      <span class="hljs-attr">tools</span>: { webSearch, runCode },
+      <span class="hljs-attr">stopWhen</span>: <span class="hljs-title function_">stepCountIs</span>(<span class="hljs-number">4</span>),
+      <span class="hljs-attr">prompt</span>: <span class="hljs-string">`Goal: <span class="hljs-subst">${goal}</span>\nProgress so far:\n<span class="hljs-subst">${log.join(<span class="hljs-string">&quot;\n&quot;</span>)}</span>\n\nDo this step: <span class="hljs-subst">${step}</span>`</span>,
+    });
+    log.<span class="hljs-title function_">push</span>(<span class="hljs-string">`<span class="hljs-subst">${step}</span> -&gt; <span class="hljs-subst">${text}</span>`</span>);
+  }
+  <span class="hljs-keyword">return</span> log;
+}</code></pre><p><strong>.NET / C#</strong> — Plan-and-Execute: plan once, then execute steps with a tool-using agent:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Agents.AI;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-keyword">record</span> <span class="hljs-title">ExecutionPlan</span>(<span class="hljs-title">string</span>[] <span class="hljs-title">Steps</span>);
+
+<span class="hljs-keyword">async</span> Task&lt;List&lt;<span class="hljs-built_in">string</span>&gt;&gt; PlanAndExecuteAsync(IChatClient chatClient, <span class="hljs-built_in">string</span> goal)
+{
+    <span class="hljs-keyword">var</span> plan = (<span class="hljs-keyword">await</span> chatClient.GetResponseAsync&lt;ExecutionPlan&gt;(
+        <span class="hljs-string">$&quot;Produce a concise ordered plan to achieve:\n<span class="hljs-subst">{goal}</span>&quot;</span>)).Result;
+
+    AIAgent worker = chatClient.CreateAIAgent(
+        instructions: <span class="hljs-string">&quot;Execute the given step using tools.&quot;</span>,
+        tools: [AIFunctionFactory.Create(WebSearch), AIFunctionFactory.Create(RunCode)]);
+
+    <span class="hljs-keyword">var</span> log = <span class="hljs-keyword">new</span> List&lt;<span class="hljs-built_in">string</span>&gt;();
+    <span class="hljs-keyword">foreach</span> (<span class="hljs-keyword">var</span> step <span class="hljs-keyword">in</span> plan.Steps)
+    {
+        <span class="hljs-keyword">var</span> progress = <span class="hljs-built_in">string</span>.Join(<span class="hljs-string">&quot;\n&quot;</span>, log);
+        <span class="hljs-keyword">var</span> text = (<span class="hljs-keyword">await</span> worker.RunAsync(
+            <span class="hljs-string">$&quot;Goal: <span class="hljs-subst">{goal}</span>\nProgress so far:\n<span class="hljs-subst">{progress}</span>\n\nDo this step: <span class="hljs-subst">{step}</span>&quot;</span>)).Text;
+        log.Add(<span class="hljs-string">$&quot;<span class="hljs-subst">{step}</span> -&gt; <span class="hljs-subst">{text}</span>&quot;</span>);
+    }
+    <span class="hljs-keyword">return</span> log;
+}</code></pre><h2>5.8 Memory</h2>
+<ul>
+<li><strong>Short-term (working)</strong> — the current context window.</li>
+<li><strong>Long-term</strong> — persisted across sessions: <strong>episodic</strong> (events, via RAG), <strong>semantic</strong> (durable facts/preferences), <strong>procedural</strong> (skills).</li>
+<li><strong>Implementation</strong> — vector/key-value store; summarize at session end; retrieve relevant memories at the next session start.</li>
+</ul>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// Write durable facts at session end; recall relevant ones next time (semantic memory).</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">persistMemory</span>(<span class="hljs-params"><span class="hljs-attr">store</span>: <span class="hljs-title class_">MemoryStore</span>, <span class="hljs-attr">userId</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">transcript</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">const</span> { <span class="hljs-built_in">object</span> } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateObject</span>({
+    <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4-mini&quot;</span>),
+    <span class="hljs-attr">schema</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">facts</span>: z.<span class="hljs-title function_">array</span>(z.<span class="hljs-title function_">string</span>()) }),
+    <span class="hljs-attr">prompt</span>: <span class="hljs-string">`Extract durable user facts/preferences worth remembering long-term:\n<span class="hljs-subst">${transcript}</span>`</span>,
+  });
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> fact <span class="hljs-keyword">of</span> <span class="hljs-built_in">object</span>.<span class="hljs-property">facts</span>) {
+    <span class="hljs-keyword">const</span> { embedding } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">embed</span>({ <span class="hljs-attr">model</span>: embedModel, <span class="hljs-attr">value</span>: fact });
+    <span class="hljs-keyword">await</span> store.<span class="hljs-title function_">upsert</span>({ userId, <span class="hljs-attr">text</span>: fact, <span class="hljs-attr">vector</span>: embedding });
+  }
+}
+
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">recallMemory</span>(<span class="hljs-params"><span class="hljs-attr">store</span>: <span class="hljs-title class_">MemoryStore</span>, <span class="hljs-attr">userId</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">const</span> { embedding } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">embed</span>({ <span class="hljs-attr">model</span>: embedModel, <span class="hljs-attr">value</span>: query });
+  <span class="hljs-keyword">return</span> store.<span class="hljs-title function_">search</span>(embedding, { userId, <span class="hljs-attr">topK</span>: <span class="hljs-number">5</span> }); <span class="hljs-comment">// inject into the next system prompt</span>
+}</code></pre><p><strong>.NET / C#</strong> — persist durable facts at session end, recall them next session:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-keyword">record</span> <span class="hljs-title">Facts</span>(<span class="hljs-title">string</span>[] <span class="hljs-title">Items</span>);
+
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task <span class="hljs-title">PersistMemoryAsync</span>(<span class="hljs-params">
+    IChatClient chat, IEmbeddingGenerator&lt;<span class="hljs-built_in">string</span>, Embedding&lt;<span class="hljs-built_in">float</span>&gt;&gt; embedder,
+    MemoryStore store, <span class="hljs-built_in">string</span> userId, <span class="hljs-built_in">string</span> transcript</span>)</span>
+{
+    <span class="hljs-keyword">var</span> facts = (<span class="hljs-keyword">await</span> chat.GetResponseAsync&lt;Facts&gt;(
+        <span class="hljs-string">$&quot;Extract durable user facts/preferences worth remembering long-term:\n<span class="hljs-subst">{transcript}</span>&quot;</span>)).Result;
+
+    <span class="hljs-keyword">foreach</span> (<span class="hljs-keyword">var</span> fact <span class="hljs-keyword">in</span> facts.Items)
+    {
+        <span class="hljs-keyword">var</span> embedding = (<span class="hljs-keyword">await</span> embedder.GenerateAsync([fact]))[<span class="hljs-number">0</span>].Vector;
+        <span class="hljs-keyword">await</span> store.UpsertAsync(<span class="hljs-keyword">new</span> { UserId = userId, Text = fact, Vector = embedding });
+    }
+}
+
+<span class="hljs-keyword">async</span> Task&lt;IReadOnlyList&lt;MemoryHit&gt;&gt; RecallMemoryAsync(
+    IEmbeddingGenerator&lt;<span class="hljs-built_in">string</span>, Embedding&lt;<span class="hljs-built_in">float</span>&gt;&gt; embedder,
+    MemoryStore store, <span class="hljs-built_in">string</span> userId, <span class="hljs-built_in">string</span> query)
+{
+    <span class="hljs-keyword">var</span> embedding = (<span class="hljs-keyword">await</span> embedder.GenerateAsync([query]))[<span class="hljs-number">0</span>].Vector;
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> store.SearchAsync(embedding, userId, topK: <span class="hljs-number">5</span>); <span class="hljs-comment">// inject into next system prompt</span>
+}</code></pre><h2>5.9 Context engineering</h2>
+<p>As context grows, quality and cost degrade (&quot;lost in the middle&quot;). Techniques: <strong>compaction/summarization</strong>, <strong>selective retrieval</strong>, <strong>structured scratchpads/todo tracking</strong>, and <strong>sub-agent isolation</strong>.</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// Compaction: summarize old turns once the window gets large, keep recent turns verbatim.</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">compact</span>(<span class="hljs-params"><span class="hljs-attr">messages</span>: <span class="hljs-title class_">Msg</span>[], keepRecent = <span class="hljs-number">6</span></span>): <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-title class_">Msg</span>[]&gt; {
+  <span class="hljs-keyword">if</span> (messages.<span class="hljs-property">length</span> &lt;= keepRecent + <span class="hljs-number">2</span>) <span class="hljs-keyword">return</span> messages;
+  <span class="hljs-keyword">const</span> old = messages.<span class="hljs-title function_">slice</span>(<span class="hljs-number">0</span>, -keepRecent);
+  <span class="hljs-keyword">const</span> recent = messages.<span class="hljs-title function_">slice</span>(-keepRecent);
+  <span class="hljs-keyword">const</span> summary = <span class="hljs-keyword">await</span> <span class="hljs-title function_">llm</span>(<span class="hljs-string">`Summarize this conversation, preserving decisions and open tasks:\n<span class="hljs-subst">${<span class="hljs-built_in">JSON</span>.stringify(old)}</span>`</span>);
+  <span class="hljs-keyword">return</span> [{ <span class="hljs-attr">role</span>: <span class="hljs-string">&quot;system&quot;</span>, <span class="hljs-attr">content</span>: <span class="hljs-string">`Conversation summary so far:\n<span class="hljs-subst">${summary}</span>`</span> }, ...recent];
+}</code></pre><p><strong>.NET / C#</strong> — compaction: summarize old turns, keep recent turns verbatim:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-keyword">async</span> Task&lt;List&lt;ChatMessage&gt;&gt; CompactAsync(IChatClient chat, List&lt;ChatMessage&gt; messages, <span class="hljs-built_in">int</span> keepRecent = <span class="hljs-number">6</span>)
+{
+    <span class="hljs-keyword">if</span> (messages.Count &lt;= keepRecent + <span class="hljs-number">2</span>) <span class="hljs-keyword">return</span> messages;
+
+    <span class="hljs-keyword">var</span> old    = messages[..^keepRecent];
+    <span class="hljs-keyword">var</span> recent = messages[^keepRecent..];
+    <span class="hljs-keyword">var</span> oldText = <span class="hljs-built_in">string</span>.Join(<span class="hljs-string">&quot;\n&quot;</span>, old.Select(m =&gt; <span class="hljs-string">$&quot;<span class="hljs-subst">{m.Role}</span>: <span class="hljs-subst">{m.Text}</span>&quot;</span>));
+    <span class="hljs-keyword">var</span> summary = (<span class="hljs-keyword">await</span> chat.GetResponseAsync(
+        <span class="hljs-string">$&quot;Summarize this conversation, preserving decisions and open tasks:\n<span class="hljs-subst">{oldText}</span>&quot;</span>)).Text;
+
+    <span class="hljs-keyword">return</span> [<span class="hljs-keyword">new</span>(ChatRole.System, <span class="hljs-string">$&quot;Conversation summary so far:\n<span class="hljs-subst">{summary}</span>&quot;</span>), .. recent];
+}</code></pre><h2>5.10 Multi-agent systems</h2>
+<p>Topologies: <strong>supervisor/orchestrator</strong> (most controllable), <strong>handoff</strong>, <strong>network/group chat</strong>. Multi-agent helps with separable roles, parallelizable subtasks, and context/tool isolation; it hurts via latency, cost, and error compounding. <strong>Prefer a single well-designed agent until you have a concrete reason to split.</strong></p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// Supervisor routes to specialist sub-agents and owns the final answer.</span>
+<span class="hljs-keyword">const</span> specialists = {
+  <span class="hljs-attr">billing</span>:   <span class="hljs-function">(<span class="hljs-params"><span class="hljs-attr">q</span>: <span class="hljs-built_in">string</span></span>) =&gt;</span> <span class="hljs-title function_">generateText</span>({ <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>), <span class="hljs-attr">system</span>: <span class="hljs-string">&quot;Billing expert.&quot;</span>, <span class="hljs-attr">prompt</span>: q }),
+  <span class="hljs-attr">technical</span>: <span class="hljs-function">(<span class="hljs-params"><span class="hljs-attr">q</span>: <span class="hljs-built_in">string</span></span>) =&gt;</span> <span class="hljs-title function_">generateText</span>({ <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>), <span class="hljs-attr">system</span>: <span class="hljs-string">&quot;Senior SRE.&quot;</span>,     <span class="hljs-attr">prompt</span>: q }),
+};
+
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">supervisor</span>(<span class="hljs-params"><span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">const</span> { <span class="hljs-built_in">object</span> } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateObject</span>({
+    <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4-mini&quot;</span>),
+    <span class="hljs-attr">schema</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">agent</span>: z.<span class="hljs-title function_">enum</span>([<span class="hljs-string">&quot;billing&quot;</span>, <span class="hljs-string">&quot;technical&quot;</span>]) }),
+    <span class="hljs-attr">prompt</span>: <span class="hljs-string">`Which specialist should handle this?\n<span class="hljs-subst">${query}</span>`</span>,
+  });
+  <span class="hljs-keyword">const</span> { text } = <span class="hljs-keyword">await</span> specialists[<span class="hljs-built_in">object</span>.<span class="hljs-property">agent</span>](query);
+  <span class="hljs-keyword">return</span> { <span class="hljs-attr">handledBy</span>: <span class="hljs-built_in">object</span>.<span class="hljs-property">agent</span>, text };
+}</code></pre><p><strong>.NET / C#</strong> — multiple agents with a supervisor (Microsoft Agent Framework):</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Agents.AI;
+
+AIAgent billing   = chatClient.CreateAIAgent(<span class="hljs-string">&quot;You are a billing expert.&quot;</span>);
+AIAgent technical = chatClient.CreateAIAgent(<span class="hljs-string">&quot;You are a senior SRE.&quot;</span>);
+
+<span class="hljs-comment">// Simple supervisor: classify, then delegate. (Agent Framework also provides</span>
+<span class="hljs-comment">// built-in graph workflows with type-safe routing, handoff, and checkpointing.)</span>
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task&lt;<span class="hljs-built_in">string</span>&gt; <span class="hljs-title">SupervisorAsync</span>(<span class="hljs-params"><span class="hljs-built_in">string</span> query</span>)</span>
+{
+    <span class="hljs-keyword">var</span> route = (<span class="hljs-keyword">await</span> chatClient.GetResponseAsync&lt;<span class="hljs-built_in">string</span>&gt;(
+        <span class="hljs-string">$&quot;Reply with exactly &#x27;billing&#x27; or &#x27;technical&#x27; for:\n<span class="hljs-subst">{query}</span>&quot;</span>)).Result.Trim();
+    <span class="hljs-keyword">var</span> agent = route == <span class="hljs-string">&quot;billing&quot;</span> ? billing : technical;
+    <span class="hljs-keyword">return</span> (<span class="hljs-keyword">await</span> agent.RunAsync(query)).Text;
+}</code></pre><hr>
+<h1>Part 6 — Evaluation &amp; observability</h1>
+<blockquote>
+<p><em>&quot;You cannot improve — or safely ship — what you cannot measure.&quot;</em></p>
+</blockquote>
+<h2>6.1 Why evals</h2>
+<p>LLM systems are <strong>non-deterministic</strong> and regress silently when you change a prompt, model, or retrieval setting. Evals give a repeatable score to compare versions and catch regressions in CI.</p>
+<h2>6.2 Types of evaluation</h2>
+<ul>
+<li><strong>Deterministic / assertion-based</strong> — exact match, regex, JSON-schema validity, &quot;did it call tool X&quot;, latency/cost budgets. Cheap and reliable.</li>
+<li><strong>LLM-as-judge</strong> — reference-based, reference-free/rubric, or <strong>pairwise</strong>.</li>
+<li><strong>Human evaluation</strong> — gold standard; used to calibrate the judge.</li>
+</ul>
+<h2>6.3 What to measure</h2>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Metrics</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Retrieval</strong></td>
+<td>context precision, context recall, MRR/NDCG</td>
+</tr>
+<tr>
+<td><strong>Generation</strong></td>
+<td>faithfulness/groundedness, answer relevancy, correctness</td>
+</tr>
+<tr>
+<td><strong>Tool use</strong></td>
+<td>correct tool selected, valid arguments, task completion</td>
+</tr>
+<tr>
+<td><strong>Routing</strong></td>
+<td>classification accuracy, confusion matrix</td>
+</tr>
+<tr>
+<td><strong>Agent trajectory</strong></td>
+<td>goal reached, # steps, cost, error recovery</td>
+</tr>
+<tr>
+<td><strong>Safety</strong></td>
+<td>refusal on unsafe input, injection resistance</td>
+</tr>
+<tr>
+<td><strong>Ops</strong></td>
+<td>latency (p50/p95), cost/req, error rate</td>
+</tr>
+</tbody></table>
+<h2>6.4 Component vs end-to-end</h2>
+<ul>
+<li><strong>Component (unit) evals</strong> — retrieval, routing, a single tool/prompt in isolation.</li>
+<li><strong>End-to-end / trajectory evals</strong> — the whole run, including the <strong>sequence of steps</strong> — essential for agents.</li>
+</ul>
+<h2>6.5 Datasets, online eval, CI</h2>
+<p>Build a <strong>golden set</strong> from real traffic + edge cases; augment with <strong>synthetic data</strong> (validate a sample). Add <strong>guardrails</strong> (real-time input/output checks), <strong>online metrics</strong> (thumbs, completion, escalation), <strong>A/B + canary</strong>, and <strong>regression testing in CI</strong> (fail the build on regression).</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// Minimal offline harness: deterministic assertions + LLM-as-judge over a dataset.</span>
+<span class="hljs-keyword">type</span> <span class="hljs-title class_">Case</span> = { <span class="hljs-attr">input</span>: <span class="hljs-built_in">string</span>; <span class="hljs-attr">mustContain</span>?: <span class="hljs-built_in">string</span>; <span class="hljs-attr">expectTool</span>?: <span class="hljs-built_in">string</span> };
+<span class="hljs-keyword">const</span> <span class="hljs-attr">dataset</span>: <span class="hljs-title class_">Case</span>[] = [
+  { <span class="hljs-attr">input</span>: <span class="hljs-string">&quot;What is 2+2?&quot;</span>, <span class="hljs-attr">mustContain</span>: <span class="hljs-string">&quot;4&quot;</span> },
+  { <span class="hljs-attr">input</span>: <span class="hljs-string">&quot;Refund order 123&quot;</span>, <span class="hljs-attr">expectTool</span>: <span class="hljs-string">&quot;refund&quot;</span> },
+];
+
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">judge</span>(<span class="hljs-params"><span class="hljs-attr">question</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">answerText</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">const</span> { <span class="hljs-built_in">object</span> } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateObject</span>({
+    <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>),          <span class="hljs-comment">// judge model (ideally different from the SUT)</span>
+    <span class="hljs-attr">schema</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">correct</span>: z.<span class="hljs-title function_">boolean</span>(), <span class="hljs-attr">reason</span>: z.<span class="hljs-title function_">string</span>() }),
+    <span class="hljs-attr">prompt</span>: <span class="hljs-string">`Q: <span class="hljs-subst">${question}</span>\nA: <span class="hljs-subst">${answerText}</span>\nIs the answer correct and relevant?`</span>,
+  });
+  <span class="hljs-keyword">return</span> <span class="hljs-built_in">object</span>;
+}
+
+<span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> c <span class="hljs-keyword">of</span> dataset) {
+  <span class="hljs-keyword">const</span> { text, steps } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">runSystemUnderTest</span>(c.<span class="hljs-property">input</span>);
+  <span class="hljs-keyword">const</span> assertionPass = !c.<span class="hljs-property">mustContain</span> || text.<span class="hljs-title function_">includes</span>(c.<span class="hljs-property">mustContain</span>);
+  <span class="hljs-keyword">const</span> toolPass = !c.<span class="hljs-property">expectTool</span> || steps.<span class="hljs-title function_">some</span>(<span class="hljs-function">(<span class="hljs-params">s</span>) =&gt;</span> s.<span class="hljs-property">toolCalls</span>?.<span class="hljs-title function_">some</span>(<span class="hljs-function">(<span class="hljs-params">t</span>) =&gt;</span> t.<span class="hljs-property">toolName</span> === c.<span class="hljs-property">expectTool</span>));
+  <span class="hljs-keyword">const</span> verdict = <span class="hljs-keyword">await</span> <span class="hljs-title function_">judge</span>(c.<span class="hljs-property">input</span>, text);
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>({ <span class="hljs-attr">input</span>: c.<span class="hljs-property">input</span>, assertionPass, toolPass, <span class="hljs-attr">judged</span>: verdict.<span class="hljs-property">correct</span> });
+}</code></pre><p><strong>.NET / C#</strong> — <code>Microsoft.Extensions.AI.Evaluation</code>:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.AI.Evaluation;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.AI.Evaluation.Quality;
+
+IEvaluator evaluator = <span class="hljs-keyword">new</span> RelevanceTruthAndCompletenessEvaluator();
+
+<span class="hljs-keyword">var</span> messages = <span class="hljs-keyword">new</span> List&lt;ChatMessage&gt; { <span class="hljs-keyword">new</span>(ChatRole.User, <span class="hljs-string">&quot;Capital of France?&quot;</span>) };
+<span class="hljs-keyword">var</span> modelResponse = <span class="hljs-keyword">await</span> chat.GetResponseAsync(messages);
+
+<span class="hljs-keyword">var</span> config = <span class="hljs-keyword">new</span> ChatConfiguration(chat); <span class="hljs-comment">// the judge model</span>
+EvaluationResult result = <span class="hljs-keyword">await</span> evaluator.EvaluateAsync(messages, modelResponse, config);
+
+<span class="hljs-keyword">foreach</span> (<span class="hljs-keyword">var</span> metric <span class="hljs-keyword">in</span> result.Metrics.Values)
+    Console.WriteLine(<span class="hljs-string">$&quot;<span class="hljs-subst">{metric.Name}</span>: <span class="hljs-subst">{metric}</span>&quot;</span>); <span class="hljs-comment">// scores + diagnostics</span></code></pre><h2>6.6 Observability &amp; tracing</h2>
+<p>Instrument every LLM call, tool call, retrieval, and sub-agent as a <strong>span</strong> (inputs, outputs, tokens, latency, cost). The emerging standard is <strong>OpenTelemetry GenAI semantic conventions</strong>. Tooling: Langfuse, LangSmith, Braintrust, Arize Phoenix, W&amp;B Weave; Azure AI Evaluation SDK for .NET.</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-keyword">import</span> { trace } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@opentelemetry/api&quot;</span>;
+
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">tracedAnswer</span>(<span class="hljs-params"><span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">tenantId</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">return</span> trace.<span class="hljs-title function_">getTracer</span>(<span class="hljs-string">&quot;rag&quot;</span>).<span class="hljs-title function_">startActiveSpan</span>(<span class="hljs-string">&quot;rag.answer&quot;</span>, <span class="hljs-title function_">async</span> (span) =&gt; {
+    span.<span class="hljs-title function_">setAttributes</span>({ <span class="hljs-string">&quot;gen_ai.operation.name&quot;</span>: <span class="hljs-string">&quot;rag&quot;</span>, tenantId });
+    <span class="hljs-keyword">try</span> {
+      <span class="hljs-keyword">const</span> out = <span class="hljs-keyword">await</span> <span class="hljs-title function_">answer</span>(query, tenantId);
+      span.<span class="hljs-title function_">setAttribute</span>(<span class="hljs-string">&quot;gen_ai.usage.citations&quot;</span>, out.<span class="hljs-property">citations</span>.<span class="hljs-property">length</span>);
+      <span class="hljs-keyword">return</span> out;
+    } <span class="hljs-keyword">finally</span> {
+      span.<span class="hljs-title function_">end</span>();
+    }
+  });
+}</code></pre><p><strong>.NET / C#</strong> — OpenTelemetry span around a RAG call (GenAI semantic conventions):</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> System.Diagnostics;
+
+<span class="hljs-keyword">static</span> <span class="hljs-keyword">readonly</span> ActivitySource Tracer = <span class="hljs-keyword">new</span>(<span class="hljs-string">&quot;rag&quot;</span>);
+
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task&lt;AnswerResult&gt; <span class="hljs-title">TracedAnswerAsync</span>(<span class="hljs-params"><span class="hljs-built_in">string</span> query, <span class="hljs-built_in">string</span> tenantId</span>)</span>
+{
+    <span class="hljs-keyword">using</span> <span class="hljs-keyword">var</span> span = Tracer.StartActivity(<span class="hljs-string">&quot;rag.answer&quot;</span>);
+    span?.SetTag(<span class="hljs-string">&quot;gen_ai.operation.name&quot;</span>, <span class="hljs-string">&quot;rag&quot;</span>);
+    span?.SetTag(<span class="hljs-string">&quot;tenantId&quot;</span>, tenantId);
+
+    <span class="hljs-keyword">var</span> outResult = <span class="hljs-keyword">await</span> AnswerAsync(query, tenantId);
+    span?.SetTag(<span class="hljs-string">&quot;gen_ai.usage.citations&quot;</span>, outResult.Citations.Count);
+    <span class="hljs-keyword">return</span> outResult;
+}</code></pre><blockquote>
+<p>The Agent Framework and <code>Microsoft.Extensions.AI</code> clients emit these GenAI spans
+automatically when you add <code>.UseOpenTelemetry()</code> to the client/agent builder.</p>
+</blockquote>
+<h2>6.7 LLM-as-judge pitfalls (and fixes)</h2>
+<ul>
+<li><strong>Position bias</strong> → randomize order, average both orders.</li>
+<li><strong>Verbosity/length bias</strong> → control for length; use rubrics.</li>
+<li><strong>Self-preference</strong> → use a different judge model.</li>
+<li><strong>Low agreement</strong> → calibrate against human labels (report Cohen&#39;s κ).</li>
+<li>Prefer <strong>pairwise + rubric</strong> over absolute 1–10 scores.</li>
+</ul>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// Pairwise judging with position-bias mitigation: evaluate both orders, require agreement.</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">pairwise</span>(<span class="hljs-params"><span class="hljs-attr">question</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">a</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">b</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">const</span> <span class="hljs-title function_">ask</span> = (<span class="hljs-params"><span class="hljs-attr">x</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">y</span>: <span class="hljs-built_in">string</span></span>) =&gt;
+    <span class="hljs-title function_">generateObject</span>({
+      <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>),
+      <span class="hljs-attr">schema</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">winner</span>: z.<span class="hljs-title function_">enum</span>([<span class="hljs-string">&quot;X&quot;</span>, <span class="hljs-string">&quot;Y&quot;</span>]) }),
+      <span class="hljs-attr">prompt</span>: <span class="hljs-string">`Q: <span class="hljs-subst">${question}</span>\nX:\n<span class="hljs-subst">${x}</span>\n\nY:\n<span class="hljs-subst">${y}</span>\n\nWhich answer is better?`</span>,
+    }).<span class="hljs-title function_">then</span>(<span class="hljs-function">(<span class="hljs-params">r</span>) =&gt;</span> r.<span class="hljs-property">object</span>.<span class="hljs-property">winner</span>);
+
+  <span class="hljs-keyword">const</span> [r1, r2] = <span class="hljs-keyword">await</span> <span class="hljs-title class_">Promise</span>.<span class="hljs-title function_">all</span>([<span class="hljs-title function_">ask</span>(a, b), <span class="hljs-title function_">ask</span>(b, a)]);
+  <span class="hljs-keyword">if</span> (r1 === <span class="hljs-string">&quot;X&quot;</span> &amp;&amp; r2 === <span class="hljs-string">&quot;Y&quot;</span>) <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;A&quot;</span>; <span class="hljs-comment">// A won in both orders</span>
+  <span class="hljs-keyword">if</span> (r1 === <span class="hljs-string">&quot;Y&quot;</span> &amp;&amp; r2 === <span class="hljs-string">&quot;X&quot;</span>) <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;B&quot;</span>;
+  <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;tie&quot;</span>;                              <span class="hljs-comment">// disagreement =&gt; no reliable winner</span>
+}</code></pre><p><strong>.NET / C#</strong> — pairwise judging with position-bias mitigation:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-keyword">record</span> <span class="hljs-title">Winner</span>(<span class="hljs-title">string</span> <span class="hljs-title">Value</span>); <span class="hljs-comment">// &quot;X&quot; or &quot;Y&quot;</span>
+
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task&lt;<span class="hljs-built_in">string</span>&gt; <span class="hljs-title">PairwiseAsync</span>(<span class="hljs-params">IChatClient judge, <span class="hljs-built_in">string</span> question, <span class="hljs-built_in">string</span> a, <span class="hljs-built_in">string</span> b</span>)</span>
+{
+    <span class="hljs-function"><span class="hljs-keyword">async</span> Task&lt;<span class="hljs-built_in">string</span>&gt; <span class="hljs-title">Ask</span>(<span class="hljs-params"><span class="hljs-built_in">string</span> x, <span class="hljs-built_in">string</span> y</span>)</span> =&gt;
+        (<span class="hljs-keyword">await</span> judge.GetResponseAsync&lt;Winner&gt;(
+            <span class="hljs-string">$&quot;Q: <span class="hljs-subst">{question}</span>\nX:\n<span class="hljs-subst">{x}</span>\n\nY:\n<span class="hljs-subst">{y}</span>\n\nWhich answer is better?&quot;</span>)).Result.Value;
+
+    <span class="hljs-keyword">var</span> r1Task = Ask(a, b);
+    <span class="hljs-keyword">var</span> r2Task = Ask(b, a);
+    <span class="hljs-keyword">await</span> Task.WhenAll(r1Task, r2Task);
+
+    <span class="hljs-keyword">if</span> (r1Task.Result == <span class="hljs-string">&quot;X&quot;</span> &amp;&amp; r2Task.Result == <span class="hljs-string">&quot;Y&quot;</span>) <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;A&quot;</span>; <span class="hljs-comment">// A won in both orders</span>
+    <span class="hljs-keyword">if</span> (r1Task.Result == <span class="hljs-string">&quot;Y&quot;</span> &amp;&amp; r2Task.Result == <span class="hljs-string">&quot;X&quot;</span>) <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;B&quot;</span>;
+    <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;tie&quot;</span>;                                                 <span class="hljs-comment">// disagreement =&gt; no winner</span>
+}</code></pre><hr>
+<h1>Part 7 — Production concerns</h1>
+<h2>7.1 Latency</h2>
+<p>Stream tokens, parallelize independent work, route easy work to smaller models, and cache.</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-keyword">import</span> { streamText } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;ai&quot;</span>;
+<span class="hljs-comment">// Stream tokens to the client for perceived speed.</span>
+<span class="hljs-keyword">const</span> stream = <span class="hljs-keyword">await</span> <span class="hljs-title function_">streamText</span>({ <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>), prompt });
+<span class="hljs-keyword">for</span> <span class="hljs-keyword">await</span> (<span class="hljs-keyword">const</span> delta <span class="hljs-keyword">of</span> stream.<span class="hljs-property">textStream</span>) process.<span class="hljs-property">stdout</span>.<span class="hljs-title function_">write</span>(delta);</code></pre><p><strong>.NET / C#</strong> — stream tokens with <code>GetStreamingResponseAsync</code>:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-comment">// Stream tokens to the client for perceived speed.</span>
+<span class="hljs-keyword">await</span> <span class="hljs-keyword">foreach</span> (<span class="hljs-keyword">var</span> update <span class="hljs-keyword">in</span> chat.GetStreamingResponseAsync(prompt))
+    Console.Write(update.Text);</code></pre><h2>7.2 Caching</h2>
+<ul>
+<li><strong>Prompt caching</strong> — providers cache stable prompt prefixes (system prompt, tool defs, context). Put the stable part first.</li>
+<li><strong>Semantic caching</strong> — cache answers keyed by query-embedding similarity.</li>
+<li><strong>Exact-match caching</strong> — for identical requests.</li>
+</ul>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// Semantic cache: serve a stored answer when a near-duplicate query arrives.</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">cachedAnswer</span>(<span class="hljs-params"><span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">tenantId</span>: <span class="hljs-built_in">string</span>, threshold = <span class="hljs-number">0.95</span></span>) {
+  <span class="hljs-keyword">const</span> { embedding } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">embed</span>({ <span class="hljs-attr">model</span>: embedModel, <span class="hljs-attr">value</span>: query });
+
+  <span class="hljs-keyword">const</span> [hit] = <span class="hljs-keyword">await</span> cache.<span class="hljs-title function_">search</span>(embedding, { tenantId, <span class="hljs-attr">topK</span>: <span class="hljs-number">1</span> });
+  <span class="hljs-keyword">if</span> (hit &amp;&amp; hit.<span class="hljs-property">score</span> &gt;= threshold) <span class="hljs-keyword">return</span> { ...hit.<span class="hljs-property">payload</span>, <span class="hljs-attr">cached</span>: <span class="hljs-literal">true</span> };
+
+  <span class="hljs-keyword">const</span> fresh = <span class="hljs-keyword">await</span> <span class="hljs-title function_">answer</span>(query, tenantId);
+  <span class="hljs-keyword">await</span> cache.<span class="hljs-title function_">upsert</span>({ tenantId, <span class="hljs-attr">vector</span>: embedding, <span class="hljs-attr">payload</span>: fresh });
+  <span class="hljs-keyword">return</span> { ...fresh, <span class="hljs-attr">cached</span>: <span class="hljs-literal">false</span> };
+}</code></pre><p><strong>.NET / C#</strong> — semantic cache keyed by query-embedding similarity:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task&lt;CachedAnswer&gt; <span class="hljs-title">CachedAnswerAsync</span>(<span class="hljs-params">
+    IEmbeddingGenerator&lt;<span class="hljs-built_in">string</span>, Embedding&lt;<span class="hljs-built_in">float</span>&gt;&gt; embedder,
+    SemanticCache cache, <span class="hljs-built_in">string</span> query, <span class="hljs-built_in">string</span> tenantId, <span class="hljs-built_in">double</span> threshold = <span class="hljs-number">0.95</span></span>)</span>
+{
+    <span class="hljs-keyword">var</span> embedding = (<span class="hljs-keyword">await</span> embedder.GenerateAsync([query]))[<span class="hljs-number">0</span>].Vector;
+
+    <span class="hljs-keyword">var</span> hits = <span class="hljs-keyword">await</span> cache.SearchAsync(embedding, tenantId, topK: <span class="hljs-number">1</span>);
+    <span class="hljs-keyword">if</span> (hits.FirstOrDefault() <span class="hljs-keyword">is</span> { } hit &amp;&amp; hit.Score &gt;= threshold)
+        <span class="hljs-keyword">return</span> hit.Payload <span class="hljs-keyword">with</span> { Cached = <span class="hljs-literal">true</span> };
+
+    <span class="hljs-keyword">var</span> fresh = <span class="hljs-keyword">await</span> AnswerAsync(query, tenantId);
+    <span class="hljs-keyword">await</span> cache.UpsertAsync(tenantId, embedding, fresh);
+    <span class="hljs-keyword">return</span> fresh <span class="hljs-keyword">with</span> { Cached = <span class="hljs-literal">false</span> };
+}</code></pre><h2>7.3 Cost control</h2>
+<p>Model routing, prompt/semantic caching, shorter contexts, capped steps, batching. Track <strong>cost per request</strong> as a first-class metric.</p>
+<h2>7.4 Reliability</h2>
+<p>Timeouts on every external call, retries with exponential backoff + jitter, <strong>fallback models/providers</strong>, circuit breakers, idempotency keys, and a <strong>max-step/token budget</strong> on agent loops.</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> withResilience&lt;T&gt;(
+  <span class="hljs-attr">primary</span>: <span class="hljs-function">() =&gt;</span> <span class="hljs-title class_">Promise</span>&lt;T&gt;,
+  <span class="hljs-attr">fallback</span>: <span class="hljs-function">() =&gt;</span> <span class="hljs-title class_">Promise</span>&lt;T&gt;,
+  { retries = <span class="hljs-number">2</span>, baseMs = <span class="hljs-number">200</span>, timeoutMs = <span class="hljs-number">20_000</span> } = {},
+): <span class="hljs-title class_">Promise</span>&lt;T&gt; {
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> attempt = <span class="hljs-number">0</span>; attempt &lt;= retries; attempt++) {
+    <span class="hljs-keyword">try</span> {
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> <span class="hljs-title function_">withTimeout</span>(<span class="hljs-title function_">primary</span>(), timeoutMs);
+    } <span class="hljs-keyword">catch</span> {
+      <span class="hljs-keyword">if</span> (attempt === retries) <span class="hljs-keyword">break</span>;
+      <span class="hljs-keyword">await</span> <span class="hljs-title function_">sleep</span>(baseMs * <span class="hljs-number">2</span> ** attempt + <span class="hljs-title class_">Math</span>.<span class="hljs-title function_">random</span>() * <span class="hljs-number">100</span>); <span class="hljs-comment">// backoff + jitter</span>
+    }
+  }
+  <span class="hljs-keyword">return</span> <span class="hljs-title function_">fallback</span>(); <span class="hljs-comment">// e.g. a smaller/cheaper model or a canned safe response</span>
+}</code></pre><p><strong>.NET / C#</strong> — timeouts, backoff-with-jitter retries, and a fallback (pairs well with <code>Microsoft.Extensions.Resilience</code> / Polly):</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-function"><span class="hljs-keyword">async</span> <span class="hljs-title">Task</span>&lt;<span class="hljs-title">T</span>&gt; <span class="hljs-title">WithResilienceAsync</span>&lt;<span class="hljs-title">T</span>&gt;(<span class="hljs-params">
+    Func&lt;CancellationToken, Task&lt;T&gt;&gt; primary, Func&lt;Task&lt;T&gt;&gt; fallback,
+    <span class="hljs-built_in">int</span> retries = <span class="hljs-number">2</span>, <span class="hljs-built_in">int</span> baseMs = <span class="hljs-number">200</span>, <span class="hljs-built_in">int</span> timeoutMs = <span class="hljs-number">20_000</span></span>)</span>
+{
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> attempt = <span class="hljs-number">0</span>; attempt &lt;= retries; attempt++)
+    {
+        <span class="hljs-keyword">try</span>
+        {
+            <span class="hljs-keyword">using</span> <span class="hljs-keyword">var</span> cts = <span class="hljs-keyword">new</span> CancellationTokenSource(timeoutMs);
+            <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> primary(cts.Token);
+        }
+        <span class="hljs-keyword">catch</span>
+        {
+            <span class="hljs-keyword">if</span> (attempt == retries) <span class="hljs-keyword">break</span>;
+            <span class="hljs-keyword">var</span> jitter = Random.Shared.Next(<span class="hljs-number">0</span>, <span class="hljs-number">100</span>);
+            <span class="hljs-keyword">await</span> Task.Delay(baseMs * (<span class="hljs-number">1</span> &lt;&lt; attempt) + jitter); <span class="hljs-comment">// backoff + jitter</span>
+        }
+    }
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> fallback(); <span class="hljs-comment">// e.g. a smaller/cheaper model or a canned safe response</span>
+}</code></pre><h2>7.5 Security — OWASP LLM Top 10 (2025) highlights</h2>
+<ul>
+<li><strong>LLM01 Prompt Injection</strong> — untrusted text (docs, web, tool output) hijacks instructions. <em>Mitigate:</em> separate system vs data, don&#39;t grant tools authority off untrusted input, output filtering, human approval.</li>
+<li><strong>LLM02 Sensitive Information Disclosure</strong> — least privilege, output scanning, no secrets in prompts.</li>
+<li><strong>LLM05 Improper Output Handling</strong> — validate/escape/parameterize downstream (SQL/HTML/shell).</li>
+<li><strong>LLM06 Excessive Agency</strong> — minimal tools, scoped permissions, confirmation gates.</li>
+<li><strong>LLM08 Vector &amp; Embedding Weaknesses</strong> — access control on the index, validate ingested content.</li>
+<li><strong>LLM10 Unbounded Consumption</strong> — rate limits, budgets, step caps.</li>
+</ul>
+<p><strong>Indirect prompt injection</strong> via retrieved/tool content is the #1 practical agent risk — treat all external content as <strong>data, never instructions</strong>.</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-keyword">const</span> <span class="hljs-variable constant_">INJECTION</span> = [<span class="hljs-regexp">/ignore (all|previous) instructions/i</span>, <span class="hljs-regexp">/system prompt/i</span>, <span class="hljs-regexp">/reveal your|exfiltrate/i</span>];
+
+<span class="hljs-comment">// Input guardrail: flag injection attempts in the query AND in retrieved content.</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">inputGuardrail</span>(<span class="hljs-params"><span class="hljs-attr">userText</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">retrieved</span>: <span class="hljs-title class_">Chunk</span>[]</span>) {
+  <span class="hljs-keyword">const</span> suspect = [userText, ...retrieved.<span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">c</span>) =&gt;</span> c.<span class="hljs-property">content</span>)]
+    .<span class="hljs-title function_">some</span>(<span class="hljs-function">(<span class="hljs-params">t</span>) =&gt;</span> <span class="hljs-variable constant_">INJECTION</span>.<span class="hljs-title function_">some</span>(<span class="hljs-function">(<span class="hljs-params">re</span>) =&gt;</span> re.<span class="hljs-title function_">test</span>(t)));
+  <span class="hljs-keyword">return</span> { suspect, <span class="hljs-attr">note</span>: suspect ? <span class="hljs-string">&quot;Enforce data-only handling of external content.&quot;</span> : <span class="hljs-literal">null</span> };
+}
+
+<span class="hljs-comment">// Output guardrail: block ungrounded or PII-leaking answers before returning.</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">outputGuardrail</span>(<span class="hljs-params"><span class="hljs-attr">answerText</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">sources</span>: <span class="hljs-title class_">Chunk</span>[]</span>) {
+  <span class="hljs-keyword">const</span> { <span class="hljs-built_in">object</span> } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateObject</span>({
+    <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4-mini&quot;</span>),
+    <span class="hljs-attr">schema</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">grounded</span>: z.<span class="hljs-title function_">boolean</span>(), <span class="hljs-attr">leaksPII</span>: z.<span class="hljs-title function_">boolean</span>() }),
+    <span class="hljs-attr">prompt</span>: <span class="hljs-string">`Sources:\n<span class="hljs-subst">${sources.map((s) =&gt; s.content).join(<span class="hljs-string">&quot;\n&quot;</span>)}</span>\n\nAnswer:\n<span class="hljs-subst">${answerText}</span>\n\n`</span> +
+            <span class="hljs-string">`Is the answer fully grounded in the sources? Does it leak PII?`</span>,
+  });
+  <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">object</span>.<span class="hljs-property">grounded</span> || <span class="hljs-built_in">object</span>.<span class="hljs-property">leaksPII</span>) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Error</span>(<span class="hljs-string">&quot;Output blocked by guardrail&quot;</span>);
+  <span class="hljs-keyword">return</span> answerText;
+}</code></pre><p><strong>.NET / C#</strong> — input/output guardrails for prompt injection and ungrounded/PII output:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> System.Text.RegularExpressions;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-keyword">static</span> <span class="hljs-keyword">readonly</span> Regex[] Injection =
+[
+    <span class="hljs-keyword">new</span>(<span class="hljs-string">&quot;ignore (all|previous) instructions&quot;</span>, RegexOptions.IgnoreCase),
+    <span class="hljs-keyword">new</span>(<span class="hljs-string">&quot;system prompt&quot;</span>, RegexOptions.IgnoreCase),
+    <span class="hljs-keyword">new</span>(<span class="hljs-string">&quot;reveal your|exfiltrate&quot;</span>, RegexOptions.IgnoreCase)
+];
+
+<span class="hljs-comment">// Input guardrail: flag injection attempts in the query AND in retrieved content.</span>
+(<span class="hljs-built_in">bool</span> Suspect, <span class="hljs-built_in">string</span>? Note) InputGuardrail(<span class="hljs-built_in">string</span> userText, IReadOnlyList&lt;Chunk&gt; retrieved)
+{
+    <span class="hljs-keyword">var</span> suspect = <span class="hljs-keyword">new</span>[] { userText }.Concat(retrieved.Select(c =&gt; c.Content))
+        .Any(t =&gt; Injection.Any(re =&gt; re.IsMatch(t)));
+    <span class="hljs-keyword">return</span> (suspect, suspect ? <span class="hljs-string">&quot;Enforce data-only handling of external content.&quot;</span> : <span class="hljs-literal">null</span>);
+}
+
+<span class="hljs-keyword">record</span> <span class="hljs-title">OutputCheck</span>(<span class="hljs-title">bool</span> <span class="hljs-title">Grounded</span>, <span class="hljs-title">bool</span> <span class="hljs-title">LeaksPII</span>);
+
+<span class="hljs-comment">// Output guardrail: block ungrounded or PII-leaking answers before returning.</span>
+<span class="hljs-function"><span class="hljs-keyword">async</span> Task&lt;<span class="hljs-built_in">string</span>&gt; <span class="hljs-title">OutputGuardrailAsync</span>(<span class="hljs-params">IChatClient chat, <span class="hljs-built_in">string</span> answerText, IReadOnlyList&lt;Chunk&gt; sources</span>)</span>
+{
+    <span class="hljs-keyword">var</span> joined = <span class="hljs-built_in">string</span>.Join(<span class="hljs-string">&quot;\n&quot;</span>, sources.Select(s =&gt; s.Content));
+    <span class="hljs-keyword">var</span> check = (<span class="hljs-keyword">await</span> chat.GetResponseAsync&lt;OutputCheck&gt;(
+        <span class="hljs-string">$&quot;Sources:\n<span class="hljs-subst">{joined}</span>\n\nAnswer:\n<span class="hljs-subst">{answerText}</span>\n\n&quot;</span> +
+        <span class="hljs-string">&quot;Is the answer fully grounded in the sources? Does it leak PII?&quot;</span>)).Result;
+    <span class="hljs-keyword">if</span> (!check.Grounded || check.LeaksPII)
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> InvalidOperationException(<span class="hljs-string">&quot;Output blocked by guardrail&quot;</span>);
+    <span class="hljs-keyword">return</span> answerText;
+}</code></pre><h2>7.6 Determinism, structured output, versioning</h2>
+<p>Low temperature for classification/extraction; <strong>structured outputs</strong> for anything parsed by code (validate + repair/retry on failure). Version prompts, tools, models, and eval datasets together; treat prompt changes like code (PR, review, eval-in-CI, canary, rollback).</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-comment">// Validate + one repair attempt for structured output.</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">extractInvoice</span>(<span class="hljs-params"><span class="hljs-attr">text</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">const</span> schema = z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">total</span>: z.<span class="hljs-title function_">number</span>(), <span class="hljs-attr">currency</span>: z.<span class="hljs-title function_">string</span>().<span class="hljs-title function_">length</span>(<span class="hljs-number">3</span>), <span class="hljs-attr">dueDate</span>: z.<span class="hljs-title function_">string</span>() });
+  <span class="hljs-keyword">try</span> {
+    <span class="hljs-keyword">return</span> (<span class="hljs-keyword">await</span> <span class="hljs-title function_">generateObject</span>({ <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4-mini&quot;</span>), schema, <span class="hljs-attr">prompt</span>: text })).<span class="hljs-property">object</span>;
+  } <span class="hljs-keyword">catch</span> {
+    <span class="hljs-comment">// Repair: feed the schema error back once before failing hard.</span>
+    <span class="hljs-keyword">return</span> (<span class="hljs-keyword">await</span> <span class="hljs-title function_">generateObject</span>({
+      <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>),
+      schema,
+      <span class="hljs-attr">prompt</span>: <span class="hljs-string">`Return STRICTLY valid data for this invoice:\n<span class="hljs-subst">${text}</span>`</span>,
+    })).<span class="hljs-property">object</span>;
+  }
+}</code></pre><p><strong>.NET / C#</strong> — structured output with a single repair attempt on failure:</p>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+
+<span class="hljs-keyword">record</span> <span class="hljs-title">Invoice</span>(<span class="hljs-title">decimal</span> <span class="hljs-title">Total</span>, <span class="hljs-title">string</span> <span class="hljs-title">Currency</span>, <span class="hljs-title">string</span> <span class="hljs-title">DueDate</span>);
+
+<span class="hljs-function"><span class="hljs-keyword">async</span> <span class="hljs-title">Task</span>&lt;<span class="hljs-title">Invoice</span>&gt; <span class="hljs-title">ExtractInvoiceAsync</span>(<span class="hljs-params">IChatClient chat, <span class="hljs-built_in">string</span> text</span>)</span>
+{
+    <span class="hljs-keyword">try</span>
+    {
+        <span class="hljs-keyword">return</span> (<span class="hljs-keyword">await</span> chat.GetResponseAsync&lt;Invoice&gt;(text)).Result;
+    }
+    <span class="hljs-keyword">catch</span>
+    {
+        <span class="hljs-comment">// Repair: restate the requirement once before failing hard.</span>
+        <span class="hljs-keyword">return</span> (<span class="hljs-keyword">await</span> chat.GetResponseAsync&lt;Invoice&gt;(
+            <span class="hljs-string">$&quot;Return STRICTLY valid data for this invoice:\n<span class="hljs-subst">{text}</span>&quot;</span>)).Result;
+    }
+}</code></pre><hr>
+<h1>Part 8 — Building an agent end-to-end (reference workflow)</h1>
+<ol>
+<li><strong>Define the job &amp; success criteria.</strong> Write 10–20 example inputs with expected outcomes <em>first</em> — your eval set.</li>
+<li><strong>Start simple.</strong> A single augmented-LLM call before any multi-step agent. Measure it.</li>
+<li><strong>Add retrieval</strong> if it needs private/fresh knowledge (Part 2). Evaluate retrieval separately.</li>
+<li><strong>Design tools carefully</strong> (Part 4.2). Prefer MCP for reusable integrations. Keep the set minimal.</li>
+<li><strong>Choose the pattern</strong> (Part 5): workflow if steps are predictable; agent loop only if open-ended.</li>
+<li><strong>Add memory &amp; context engineering</strong> as needed (Part 5.8–5.9).</li>
+<li><strong>Instrument everything</strong> — tracing/spans from day one (Part 6.6).</li>
+<li><strong>Build the eval harness</strong> — assertions + judge + trajectory checks; wire into CI (Part 6).</li>
+<li><strong>Add guardrails &amp; security</strong> — input/output checks, least privilege, human-in-the-loop, step/budget caps (Part 7).</li>
+<li><strong>Ship behind canary/A-B, monitor online metrics, iterate.</strong> Every change re-runs evals.</li>
+</ol>
+<h2>8.1 Recommended stacks</h2>
+<p><strong>TypeScript / Node</strong> — Vercel AI SDK (<code>generateText</code>/<code>ToolLoopAgent</code>, structured output, streaming), <code>@modelcontextprotocol/sdk</code>, LangGraph.js/Mastra for graph orchestration, pgvector/Qdrant/Pinecone, promptfoo/Braintrust/Langfuse for evals.</p>
+<p><strong>.NET / C#</strong> — <code>Microsoft.Extensions.AI</code> (<code>IChatClient</code>/<code>IEmbeddingGenerator</code> + function invocation), <strong>Microsoft Agent Framework</strong> (<code>Microsoft.Agents.AI</code>: agents, threads, graph workflows, MCP, middleware, telemetry — successor to Semantic Kernel + AutoGen), <code>Microsoft.Extensions.VectorData</code>, <code>Microsoft.Extensions.AI.Evaluation</code> + Azure AI Evaluation SDK.</p>
+<h2>8.2 End-to-end example — a support agent (TypeScript)</h2>
+<p>Combines RAG-as-tool → tool loop → guardrails → bounded stop condition:</p>
+<pre class="code-block"><code class="language-ts"><span class="hljs-keyword">import</span> { generateText, tool, stepCountIs } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;ai&quot;</span>;
+<span class="hljs-keyword">import</span> { z } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;zod&quot;</span>;
+
+<span class="hljs-keyword">const</span> searchDocs = <span class="hljs-title function_">tool</span>({
+  <span class="hljs-attr">description</span>: <span class="hljs-string">&quot;Search the product knowledge base. Use for how-to and troubleshooting questions.&quot;</span>,
+  <span class="hljs-attr">inputSchema</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">query</span>: z.<span class="hljs-title function_">string</span>() }),
+  <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> ({ query }) =&gt; <span class="hljs-title function_">retrieve</span>(query, currentTenantId, <span class="hljs-number">5</span>), <span class="hljs-comment">// hybrid + rerank</span>
+});
+
+<span class="hljs-keyword">const</span> createTicket = <span class="hljs-title function_">tool</span>({
+  <span class="hljs-attr">description</span>: <span class="hljs-string">&quot;Escalate to a human by creating a support ticket. Use only when docs cannot resolve it.&quot;</span>,
+  <span class="hljs-attr">inputSchema</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">summary</span>: z.<span class="hljs-title function_">string</span>(), <span class="hljs-attr">severity</span>: z.<span class="hljs-title function_">enum</span>([<span class="hljs-string">&quot;low&quot;</span>, <span class="hljs-string">&quot;high&quot;</span>]) }),
+  <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> (args) =&gt; ({ <span class="hljs-attr">ticketId</span>: <span class="hljs-keyword">await</span> tickets.<span class="hljs-title function_">create</span>(args) }),
+});
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">supportAgent</span>(<span class="hljs-params"><span class="hljs-attr">userMessage</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">tenantId</span>: <span class="hljs-built_in">string</span></span>) {
+  currentTenantId = tenantId;
+
+  <span class="hljs-keyword">const</span> { text, steps } = <span class="hljs-keyword">await</span> <span class="hljs-title function_">generateText</span>({
+    <span class="hljs-attr">model</span>: <span class="hljs-title function_">openai</span>(<span class="hljs-string">&quot;gpt-5.4&quot;</span>),
+    <span class="hljs-attr">system</span>:
+      <span class="hljs-string">&quot;You are a support agent. Prefer answering from the knowledge base with citations. &quot;</span> +
+      <span class="hljs-string">&quot;Escalate with createTicket only if the docs do not contain the answer. Be concise.&quot;</span>,
+    <span class="hljs-attr">tools</span>: { searchDocs, createTicket },
+    <span class="hljs-attr">stopWhen</span>: <span class="hljs-title function_">stepCountIs</span>(<span class="hljs-number">6</span>),          <span class="hljs-comment">// guardrail: bounded loop</span>
+    <span class="hljs-attr">prompt</span>: userMessage,
+  });
+
+  <span class="hljs-keyword">return</span> { <span class="hljs-attr">answer</span>: text, <span class="hljs-attr">toolCalls</span>: steps.<span class="hljs-title function_">flatMap</span>(<span class="hljs-function">(<span class="hljs-params">s</span>) =&gt;</span> s.<span class="hljs-property">toolCalls</span>) };
+}</code></pre><h2>8.3 End-to-end example — an agent with tools (.NET, Agent Framework)</h2>
+<pre class="code-block"><code class="language-csharp"><span class="hljs-keyword">using</span> Microsoft.Agents.AI;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.AI;
+<span class="hljs-keyword">using</span> System.ComponentModel;
+
+[<span class="hljs-meta">Description(<span class="hljs-string">&quot;Search the product knowledge base for how-to and troubleshooting answers.&quot;</span>)</span>]
+<span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">async</span> Task&lt;<span class="hljs-built_in">string</span>&gt; <span class="hljs-title">SearchDocs</span>(<span class="hljs-params">[Description(<span class="hljs-string">&quot;User&#x27;s question&quot;</span></span>)] <span class="hljs-built_in">string</span> query)</span>
+    =&gt; <span class="hljs-keyword">await</span> Rag.RetrieveTopKAsync(query, <span class="hljs-number">5</span>); <span class="hljs-comment">// hybrid + rerank retrieval</span>
+
+[<span class="hljs-meta">Description(<span class="hljs-string">&quot;Escalate to a human by creating a support ticket when docs cannot resolve it.&quot;</span>)</span>]
+<span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">async</span> Task&lt;<span class="hljs-built_in">string</span>&gt; <span class="hljs-title">CreateTicket</span>(<span class="hljs-params"><span class="hljs-built_in">string</span> summary, <span class="hljs-built_in">string</span> severity</span>)</span>
+    =&gt; <span class="hljs-string">$&quot;Created ticket <span class="hljs-subst">{<span class="hljs-keyword">await</span> Tickets.CreateAsync(summary, severity)}</span>&quot;</span>;
+
+AIAgent agent = chatClient.CreateAIAgent(
+    instructions:
+        <span class="hljs-string">&quot;You are a support agent. Answer from the knowledge base with citations. &quot;</span> +
+        <span class="hljs-string">&quot;Escalate with CreateTicket only if the docs lack the answer. Be concise.&quot;</span>,
+    tools:
+    [
+        AIFunctionFactory.Create(SearchDocs),
+        AIFunctionFactory.Create(CreateTicket)
+    ]);
+
+AgentThread thread = agent.GetNewThread(); <span class="hljs-comment">// carries session state across turns</span>
+<span class="hljs-keyword">var</span> reply = <span class="hljs-keyword">await</span> agent.RunAsync(<span class="hljs-string">&quot;How do I reset my API key?&quot;</span>, thread);
+Console.WriteLine(reply);</code></pre><hr>
+<h1>Part 9 — Interview preparation</h1>
+<h2>9.1 Rapid-fire Q&amp;A</h2>
+<p><strong>Agent vs workflow?</strong> A workflow orchestrates LLM calls through fixed code paths; an agent lets the model decide its own control flow and tool use dynamically. Start with workflows; use agents only for open-ended tasks.</p>
+<p><strong>When would you NOT use RAG?</strong> Tiny/static corpus (paste it in), behavior change (fine-tune), or chit-chat with no knowledge need (route around it).</p>
+<p><strong>Why hybrid search?</strong> Dense captures semantics but misses exact tokens; BM25 captures exact matches but misses paraphrases. Fuse with RRF.</p>
+<p><strong>Why two-stage retrieval?</strong> Cross-encoders are precise but slow → cheap ANN recall (top-100) then expensive rerank (top-5).</p>
+<p><strong>How does function calling work?</strong> The model returns a structured request to call a named tool with JSON args; your code executes and feeds the result back; repeat. The model never executes code.</p>
+<p><strong>What is MCP and why does it matter?</strong> An open protocol standardizing how apps expose tools/resources/prompts to LLM clients — build once, use across Claude/ChatGPT/IDEs. Decouples integration providers from agent apps.</p>
+<p><strong>Biggest agent security risk?</strong> Prompt injection — especially <em>indirect</em> via retrieved docs or tool output. Treat external content as untrusted data, enforce least privilege, gate risky actions.</p>
+<p><strong>How do you evaluate an agent?</strong> Separate component evals from end-to-end trajectory evals. Deterministic assertions where possible, LLM-as-judge (pairwise + rubric) for quality, a versioned golden dataset, all in CI. Instrument with traces.</p>
+<p><strong>LLM-as-judge risks?</strong> Position/length/self-preference bias, low human agreement. Mitigate with randomized order, rubrics, a different judge model, pairwise comparisons, calibration.</p>
+<p><strong>Control cost/latency?</strong> Model routing, prompt &amp; semantic caching, parallel tool calls, streaming, less context, capped steps/budget.</p>
+<p><strong>Stop an agent from looping forever?</strong> Hard stop condition: max steps, token/cost budget, or a <code>finish</code> signal — plus per-tool timeouts and retries.</p>
+<p><strong>Orchestrator-workers vs parallelization?</strong> Parallelization splits <em>known</em> subtasks up front; orchestrator-workers <em>dynamically</em> decomposes when subtasks aren&#39;t known.</p>
+<h2>9.2 System-design prompt: &quot;Design a customer-support agent&quot;</h2>
+<ol>
+<li><strong>Requirements &amp; metrics</strong> (resolution rate, escalation rate, latency, cost, safety).</li>
+<li><strong>Data &amp; retrieval</strong> — ingest docs/tickets; chunk + embed; hybrid + rerank; citations.</li>
+<li><strong>Tools</strong> — KB search, order lookup, refund (human approval), ticket creation. Least privilege.</li>
+<li><strong>Control flow</strong> — route by intent; answer from RAG; escalate on low confidence; bounded loop.</li>
+<li><strong>Guardrails</strong> — PII/injection filters, output validation, confirmation for money-moving actions.</li>
+<li><strong>Evaluation</strong> — golden set, faithfulness + resolution judges, trajectory checks, CI.</li>
+<li><strong>Observability</strong> — traces/spans, online metrics, feedback loop.</li>
+<li><strong>Rollout</strong> — canary/A-B, monitor, iterate.</li>
+</ol>
+<h2>9.3 Glossary</h2>
+<ul>
+<li><strong>ANN</strong> — approximate nearest neighbor search over vectors.</li>
+<li><strong>BM25</strong> — sparse keyword ranking function.</li>
+<li><strong>Cross-encoder</strong> — model that scores (query, doc) jointly; used for reranking.</li>
+<li><strong>HNSW / IVF-PQ</strong> — ANN index structures.</li>
+<li><strong>RAG</strong> — retrieval-augmented generation.</li>
+<li><strong>RRF</strong> — reciprocal rank fusion.</li>
+<li><strong>ReAct</strong> — reason+act agent loop.</li>
+<li><strong>MCP</strong> — Model Context Protocol.</li>
+<li><strong>ACI</strong> — agent-computer interface (tool design).</li>
+<li><strong>LLM-as-judge</strong> — using an LLM to score outputs.</li>
+<li><strong>Groundedness/Faithfulness</strong> — answer supported by provided context.</li>
+<li><strong>Trajectory eval</strong> — evaluating the sequence of agent steps.</li>
+<li><strong>Context engineering</strong> — managing what goes into the context window.</li>
+<li><strong>Guardrail</strong> — real-time safety/validation check.</li>
+<li><strong>Prompt injection</strong> — malicious instructions embedded in inputs/content.</li>
+</ul>
+<h2>9.4 Talking-point checklist</h2>
+<ul>
+<li><input disabled="" type="checkbox"> Agent vs workflow, and when to use each.</li>
+<li><input disabled="" type="checkbox"> Draw the RAG pipeline and name each stage&#39;s failure mode.</li>
+<li><input disabled="" type="checkbox"> Justify hybrid search + reranking.</li>
+<li><input disabled="" type="checkbox"> Explain the function-calling loop and who executes tools.</li>
+<li><input disabled="" type="checkbox"> Describe MCP&#39;s architecture and value.</li>
+<li><input disabled="" type="checkbox"> Name the five workflow patterns + the autonomous agent.</li>
+<li><input disabled="" type="checkbox"> Design an eval strategy (component + trajectory, assertions + judge, CI).</li>
+<li><input disabled="" type="checkbox"> List top agent security risks and mitigations (esp. prompt injection).</li>
+<li><input disabled="" type="checkbox"> Talk about latency/cost levers (routing, caching, parallelism).</li>
+<li><input disabled="" type="checkbox"> Sketch an end-to-end production agent.</li>
+</ul>
+<h2>9.5 Further reading (primary sources)</h2>
+<ul>
+<li>Anthropic — <em>Building Effective Agents</em>; <em>Contextual Retrieval</em>; prompt caching docs.</li>
+<li>Model Context Protocol — <code>modelcontextprotocol.io</code> (spec, architecture, SDKs).</li>
+<li>Microsoft Learn — <em>Microsoft Agent Framework</em>; <em>Microsoft.Extensions.AI</em>; .NET RAG &amp; evaluation tutorials.</li>
+<li>Vercel — <em>AI SDK</em> docs (agents, tools, loop control).</li>
+<li>OWASP — <em>Top 10 for LLM Applications (2025)</em>.</li>
+<li>OpenTelemetry — <em>GenAI semantic conventions</em>.</li>
+<li>RAGAS / DeepEval / promptfoo — evaluation frameworks.</li>
+</ul>
+<hr>
+<p><em>End of study guide. Verify exact SDK symbol names and model IDs against current documentation before use — the patterns are stable; the APIs move fast.</em></p>
+
+</main>
+</body>
+</html>
