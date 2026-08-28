@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude API Cheat Sheet</title>
+<style>
+:root {
+  --ink: #303030;
+  --heading: #303030;
+  --muted: #5b5b5b;
+  --rule: #d6d6d6;
+  --code-bg: #eeeeee;
+  --code-ink: #222222;
+  --inline-code: #666666;
+  --keyword: #0000ff;
+  --string: #b00000;
+  --number: #008000;
+  --comment: #777777;
+  --link: #1f5f9b;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background: #fff;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: 10pt;
+  line-height: 1.38;
+}
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 28px 34px 40px;
+}
+h1, h2, h3 { color: var(--heading); line-height: 1.2; page-break-after: avoid; }
+h1 {
+  font-size: 22pt;
+  margin: 0 0 8px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--rule);
+}
+h2 {
+  font-size: 14pt;
+  margin: 0 0 7px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--rule);
+}
+h3 {
+  font-size: 11pt;
+  margin: 10px 0 4px;
+}
+p { margin: 5px 0; }
+strong { font-weight: 700; }
+em { color: var(--muted); }
+blockquote {
+  margin: 8px 0 12px;
+  padding: 7px 11px;
+  background: #f2f2f2;
+  border-left: 3px solid #999;
+  color: #424242;
+  break-inside: avoid;
+}
+blockquote p { margin: 0; }
+ul, ol { margin: 5px 0; padding-left: 19px; }
+li { margin: 2px 0; }
+li::marker { color: #666; }
+code {
+  color: var(--inline-code);
+  background: var(--code-bg);
+  border-radius: 3px;
+  padding: 1px 3px;
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: .88em;
+}
+pre {
+  margin: 7px 0;
+  padding: 9px 11px;
+  background: var(--code-bg);
+  color: var(--code-ink);
+  border-radius: 4px;
+  overflow-x: auto;
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 8.2pt;
+  line-height: 1.32;
+  white-space: pre-wrap;
+  word-break: break-word;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+pre code { padding: 0; color: inherit; background: transparent; white-space: inherit; }
+.kw { color: var(--keyword); }
+.str { color: var(--string); }
+.num { color: var(--number); }
+.com { color: var(--comment); font-style: italic; }
+.attr { color: #006060; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 7px 0;
+  font-size: 9pt;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+th, td { border-bottom: 1px solid var(--rule); padding: 4px 7px; text-align: left; vertical-align: top; }
+th { font-weight: 700; }
+td:first-child { width: 34%; }
+.section {
+    margin: 12px 0 24px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.columns {
+  column-count: 2;
+  column-gap: 20px;
+  column-rule: 1px solid #e2e2e2;
+    column-fill: auto;
+}
+.section h2 { break-after: avoid; }
+@media screen and (max-width: 760px) {
+  .page { padding: 20px 18px; }
+  .columns { column-count: 1; column-rule: 0; }
+}
+@page { size: A4; margin: 12mm 13mm; }
+@media print {
+  body { font-size: 9.2pt; }
+  .page { max-width: none; padding: 0; }
+    .columns { column-fill: auto; }
+    .section { break-inside: auto; page-break-inside: auto; }
+  h1 { font-size: 19pt; }
+  h2 { font-size: 12.5pt; }
+  h3 { font-size: 10pt; }
+  pre { font-size: 7.25pt; padding: 7px 8px; }
+  table { font-size: 8.2pt; }
+    .section { margin: 9px 0 24px; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+<h1>Claude API Cheat Sheet</h1>
+<blockquote><p>Practical reference extracted from <strong>Building with the Claude API</strong>. Verify model names, tool-version strings, and API behavior against current Anthropic documentation before production use.</p></blockquote>
+
+<div class="columns">
+<section class="section">
+<h2>1. Setup and first request</h2>
+<h3>Install and configure</h3>
+<pre><code>pip install anthropic python-dotenv</code></pre>
+<p><code>.env</code>:</p>
+<pre><code><span class="attr">ANTHROPIC_API_KEY</span>=<span class="str">"your-api-key-here"</span></code></pre>
+<ul>
+<li>Add <code>.env</code> to <code>.gitignore</code>; never hard-code or commit API keys.</li>
+<li>Initialize the client:</li>
+</ul>
+<pre><code><span class="kw">from</span> dotenv <span class="kw">import</span> load_dotenv
+<span class="kw">from</span> anthropic <span class="kw">import</span> Anthropic
+
+load_dotenv()
+client = Anthropic()
+model = <span class="str">"claude-sonnet-4-0"</span></code></pre>
+<h3>Minimal request</h3>
+<pre><code>message = client.messages.create(
+    model=model,
+    max_tokens=<span class="num">1000</span>,
+    messages=[
+        {<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"Explain quantum computing in one sentence."</span>}
+    ],
+)
+
+text = message.content[<span class="num">0</span>].text</code></pre>
+<h3>Core parameters</h3>
+<table>
+<thead><tr><th>Parameter</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>model</code></td><td>Model identifier to use.</td></tr>
+<tr><td><code>max_tokens</code></td><td>Upper safety limit for generated tokens; not a target length.</td></tr>
+<tr><td><code>messages</code></td><td>Conversation history, using <code>user</code> and <code>assistant</code> roles.</td></tr>
+<tr><td><code>system</code></td><td>Optional behavior, role, and policy instructions.</td></tr>
+<tr><td><code>temperature</code></td><td>Controls variability; use deliberately for the task.</td></tr>
+<tr><td><code>stop_sequences</code></td><td>Stops generation when a specified sequence appears.</td></tr>
+<tr><td><code>tools</code></td><td>Tool schemas Claude may invoke.</td></tr>
+</tbody>
+</table>
+</section>
+
+<section class="section">
+<h2>2. Conversations and system prompts</h2>
+<h3>Stateless API: manage history yourself</h3>
+<p>Claude does not retain conversation history between requests. For a multi-turn interaction:</p>
+<ol>
+<li>Append the user message.</li>
+<li>Send the complete history.</li>
+<li>Append Claude's full response as an <code>assistant</code> message.</li>
+<li>Append the next user message.</li>
+<li>Send the full history again.</li>
+</ol>
+<pre><code><span class="kw">def</span> add_user_message(messages, text):
+    messages.append({<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: text})
+
+<span class="kw">def</span> add_assistant_message(messages, text):
+    messages.append({<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: text})
+
+<span class="kw">def</span> chat(messages, system=<span class="kw">None</span>, temperature=<span class="num">1.0</span>, stop_sequences=<span class="kw">None</span>):
+    params = {
+        <span class="str">"model"</span>: model,
+        <span class="str">"max_tokens"</span>: <span class="num">1000</span>,
+        <span class="str">"messages"</span>: messages,
+        <span class="str">"temperature"</span>: temperature,
+    }
+    <span class="kw">if</span> system:
+        params[<span class="str">"system"</span>] = system
+    <span class="kw">if</span> stop_sequences:
+        params[<span class="str">"stop_sequences"</span>] = stop_sequences
+    <span class="kw">return</span> client.messages.create(**params)</code></pre>
+<p>When a response contains tools or multiple content blocks, append the <strong>entire</strong> <code>response.content</code>, not only extracted text.</p>
+<h3>System prompts</h3>
+<p>Use system prompts to establish a stable role, tone, constraints, and workflow:</p>
+<pre><code>system = <span class="str">"""
+You are a patient math tutor. Do not immediately provide the final answer.
+Guide the student step by step with hints and questions.
+"""</span>
+response = chat(messages, system=system)</code></pre>
+<p>Only include <code>system</code> when it has a value; avoid sending <code>system=None</code> if unsupported by the API call.</p>
+<h3>Temperature guidance</h3>
+<table>
+<thead><tr><th>Range</th><th>Typical use</th></tr></thead>
+<tbody>
+<tr><td><code>0.0–0.3</code></td><td>Factual answers, coding, extraction, moderation.</td></tr>
+<tr><td><code>0.4–0.7</code></td><td>Summaries, education, constrained problem solving.</td></tr>
+<tr><td><code>0.8–1.0</code></td><td>Brainstorming, creative writing, marketing, jokes.</td></tr>
+</tbody>
+</table>
+<p>Temperature changes probabilities; it does not guarantee a different output.</p>
+</section>
+
+<section class="section">
+<h2>3. Streaming</h2>
+<p>Streaming improves perceived latency by delivering generated content incrementally.</p>
+<h3>Simplified text streaming</h3>
+<pre><code><span class="kw">with</span> client.messages.stream(
+    model=model,
+    max_tokens=<span class="num">1000</span>,
+    messages=messages,
+) <span class="kw">as</span> stream:
+    <span class="kw">for</span> text <span class="kw">in</span> stream.text_stream:
+        print(text, end=<span class="str">""</span>, flush=<span class="kw">True</span>)
+    final_message = stream.get_final_message()</code></pre>
+<p>Use <code>stream.get_final_message()</code> when you need the complete response for storage or downstream processing.</p>
+<h3>Important events</h3>
+<ul>
+<li><code>message_start</code>: message begins.</li>
+<li><code>content_block_start</code>: content block begins.</li>
+<li><code>content_block_delta</code>: generated content chunks; text is usually here.</li>
+<li><code>content_block_stop</code>: block ends.</li>
+<li><code>message_delta</code>: message metadata/final state.</li>
+<li><code>message_stop</code>: message ends.</li>
+</ul>
+</section>
+
+<section class="section">
+<h2>4. Clean structured output</h2>
+<p>Claude may wrap JSON or code in Markdown and add commentary. For raw structured output, combine:</p>
+<ol>
+<li>A clear output-only instruction.</li>
+<li>Assistant-message prefilling.</li>
+<li>A stop sequence.</li>
+<li>Parsing and validation in application code.</li>
+</ol>
+<pre><code><span class="kw">import</span> json
+
+messages = [
+    {<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"Generate a short EventBridge rule as JSON."</span>},
+    {<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: <span class="str">"```json"</span>},
+]
+response = chat(messages, stop_sequences=[<span class="str">"```"</span>])
+obj = json.loads(response.content[<span class="num">0</span>].text.strip())</code></pre>
+<p>This pattern also applies to Python, regex, CSV, lists, and other formats. Do not trust model output merely because it looks structured&mdash;parse and validate it.</p>
+</section>
+
+<section class="section">
+<h2>5. Prompt engineering</h2>
+<h3>High-value prompt structure</h3>
+<p>A robust prompt commonly contains:</p>
+<ol>
+<li><strong>Direct action:</strong> start with <code>Write</code>, <code>Create</code>, <code>Generate</code>, <code>Analyze</code>, or <code>Identify</code>.</li>
+<li><strong>Task and context:</strong> state what the model must accomplish and what information it should use.</li>
+<li><strong>Output requirements:</strong> specify format, length, fields, tone, and exclusions.</li>
+<li><strong>Process steps:</strong> for complex tasks, require a systematic workflow or checklist.</li>
+<li><strong>Examples:</strong> show representative input/output pairs, especially failure cases.</li>
+<li><strong>Delimiters:</strong> use XML-like tags around variable data and examples.</li>
+</ol>
+<p><strong>Weak:</strong> <code>What should this person eat?</code></p>
+<p><strong>Better:</strong> <code>Generate a one-day meal plan for an athlete that meets the athlete's dietary restrictions.</code></p>
+<h3>Be specific</h3>
+<p>Output guidelines should define:</p>
+<ul>
+<li>Required sections or fields.</li>
+<li>Exact format and length.</li>
+<li>Required facts, calculations, or constraints.</li>
+<li>Tone and audience.</li>
+<li>Prohibited commentary or formatting.</li>
+</ul>
+<p>For difficult problems, add process steps such as identifying assumptions, considering alternatives, checking constraints, and validating the final result.</p>
+<h3>XML-style delimiters</h3>
+<p>Use descriptive tags to separate instructions, data, code, and documentation:</p>
+<pre><code>&lt;athlete_information&gt;
+Height: 188 cm
+Weight: 82 kg
+Goal: Build muscle
+Restrictions: Vegetarian
+&lt;/athlete_information&gt;
+
+Generate a meal plan using the athlete information above.</code></pre>
+<p>Useful tags include <code>&lt;user_data&gt;</code>, <code>&lt;sales_records&gt;</code>, <code>&lt;my_code&gt;</code>, <code>&lt;docs&gt;</code>, <code>&lt;sample_input&gt;</code>, and <code>&lt;ideal_output&gt;</code>.</p>
+<h3>One-shot and multi-shot examples</h3>
+<p>Examples are particularly valuable for:</p>
+<ul>
+<li>Edge cases and sarcasm.</li>
+<li>Exact JSON or code formats.</li>
+<li>Desired tone and style.</li>
+<li>Ambiguous inputs.</li>
+</ul>
+<p>Use one example to establish a pattern; use multiple examples to cover distinct cases. Prefer high-scoring examples from evaluation runs, and explain why an ideal output is good.</p>
+</section>
+
+<section class="section">
+<h2>6. Prompt evaluation</h2>
+<h3>Evaluation loop</h3>
+<ol>
+<li>Define the goal and success criteria.</li>
+<li>Write a baseline prompt.</li>
+<li>Build a representative dataset.</li>
+<li>Run every case through the prompt.</li>
+<li>Grade outputs with code, model, or human graders.</li>
+<li>Compute metrics and inspect failures.</li>
+<li>Change one prompt element at a time.</li>
+<li>Re-run and keep measurable improvements.</li>
+</ol>
+<p>Do not rely on one or two manual tests; production users generate unexpected inputs.</p>
+<h3>Minimal evaluation architecture</h3>
+<pre><code><span class="kw">def</span> run_prompt(test_case):
+    prompt = f<span class="str">"""
+    Solve the following task:
+    {test_case['task']}
+    """</span>
+    response = chat([{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: prompt}])
+    <span class="kw">return</span> response.content[<span class="num">0</span>].text
+
+<span class="kw">def</span> run_eval(dataset):
+    results = []
+    <span class="kw">for</span> test_case <span class="kw">in</span> dataset:
+        output = run_prompt(test_case)
+        results.append({<span class="str">"test_case"</span>: test_case, <span class="str">"output"</span>: output})
+    <span class="kw">return</span> results</code></pre>
+<p>Use small datasets, such as 2&ndash;3 cases, during development; expand for final validation. Limit concurrency initially to avoid rate limits.</p>
+<h3>Grader types</h3>
+<table>
+<thead><tr><th>Grader</th><th>Best for</th><th>Caveat</th></tr></thead>
+<tbody>
+<tr><td>Code grader</td><td>Parsing, syntax, length, required/forbidden strings, format.</td><td>Limited semantic judgment.</td></tr>
+<tr><td>Model grader</td><td>Helpfulness, completeness, instruction following, safety, task fit.</td><td>Can be variable or biased.</td></tr>
+<tr><td>Human grader</td><td>Nuanced quality, relevance, depth, and overall judgment.</td><td>Slow and expensive.</td></tr>
+</tbody>
+</table>
+<p>Define criteria before grading. For generated code, separate <strong>format</strong>, <strong>syntax</strong>, and <strong>task correctness</strong>.</p>
+<h3>Syntax validators</h3>
+<pre><code><span class="kw">import</span> ast, json, re
+
+<span class="kw">def</span> validate_json(text):
+    <span class="kw">try</span>:
+        json.loads(text.strip())
+        <span class="kw">return</span> <span class="num">10</span>
+    <span class="kw">except</span> json.JSONDecodeError:
+        <span class="kw">return</span> <span class="num">0</span>
+
+<span class="kw">def</span> validate_python(text):
+    <span class="kw">try</span>:
+        ast.parse(text.strip())
+        <span class="kw">return</span> <span class="num">10</span>
+    <span class="kw">except</span> SyntaxError:
+        <span class="kw">return</span> <span class="num">0</span>
+
+<span class="kw">def</span> validate_regex(text):
+    <span class="kw">try</span>:
+        re.compile(text.strip())
+        <span class="kw">return</span> <span class="num">10</span>
+    <span class="kw">except</span> re.error:
+        <span class="kw">return</span> <span class="num">0</span></code></pre>
+<p>A simple combined score is:</p>
+<pre><code>score = (model_score + syntax_score) / <span class="num">2</span></code></pre>
+<p>Adjust weights to match product priorities. Track averages, per-case scores, failure categories, and regressions&mdash;not just one headline score.</p>
+</section>
+
+<section class="section">
+<h2>7. Tool use</h2>
+<h3>What tools solve</h3>
+<p>Tools let Claude access current data or perform actions through your application. The standard loop is:</p>
+<ol>
+<li>Send the user request plus tool schemas.</li>
+<li>Claude returns a <code>tool_use</code> request.</li>
+<li>Your server validates arguments and executes the function.</li>
+<li>Your server sends a matching <code>tool_result</code>.</li>
+<li>Claude produces a final response or requests another tool.</li>
+</ol>
+<p>Claude does not execute your Python functions automatically; your application owns execution, permissions, validation, and side effects.</p>
+<h3>Tool function best practices</h3>
+<ul>
+<li>Use descriptive function and parameter names.</li>
+<li>Validate required and allowed inputs.</li>
+<li>Return structured, serializable results.</li>
+<li>Provide actionable error messages; Claude may correct and retry.</li>
+<li>Enforce authorization, timeouts, rate limits, and idempotency for side effects.</li>
+<li>Treat tool arguments as untrusted input.</li>
+</ul>
+<pre><code><span class="kw">from</span> datetime <span class="kw">import</span> datetime
+
+<span class="kw">def</span> get_current_datetime(date_format=<span class="str">"%Y-%m-%d %H:%M:%S"</span>):
+    <span class="kw">if</span> <span class="kw">not</span> date_format:
+        <span class="kw">raise</span> ValueError(<span class="str">"date_format cannot be empty"</span>)
+    <span class="kw">return</span> datetime.now().strftime(date_format)</code></pre>
+<h3>Tool schema anatomy</h3>
+<pre><code>get_current_datetime_schema = {
+    <span class="str">"name"</span>: <span class="str">"get_current_datetime"</span>,
+    <span class="str">"description"</span>: (
+        <span class="str">"Return the current date and time in the requested format. "</span>
+        <span class="str">"Use this when an exact current timestamp is needed."</span>
+    ),
+    <span class="str">"input_schema"</span>: {
+        <span class="str">"type"</span>: <span class="str">"object"</span>,
+        <span class="str">"properties"</span>: {
+            <span class="str">"date_format"</span>: {
+                <span class="str">"type"</span>: <span class="str">"string"</span>,
+                <span class="str">"description"</span>: <span class="str">"Python strftime format string."</span>,
+                <span class="str">"default"</span>: <span class="str">"%Y-%m-%d %H:%M:%S"</span>,
+            }
+        },
+        <span class="str">"required"</span>: [],
+    },
+}</code></pre>
+<p>A schema has <code>name</code>, a detailed <code>description</code>, and <code>input_schema</code> containing types, properties, descriptions, defaults, and required fields.</p>
+<h3>Handling tool messages</h3>
+<p>A tool-enabled response can contain text and one or more <code>tool_use</code> blocks. Preserve the entire assistant content:</p>
+<pre><code>messages.append({<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: response.content})</code></pre>
+<p>For every tool request, return a matching result:</p>
+<pre><code>tool_result = {
+    <span class="str">"type"</span>: <span class="str">"tool_result"</span>,
+    <span class="str">"tool_use_id"</span>: tool_request.id,
+    <span class="str">"content"</span>: json.dumps(tool_output),
+    <span class="str">"is_error"</span>: <span class="kw">False</span>,
+}
+messages.append({<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: [tool_result]})</code></pre>
+<p>The <code>tool_use_id</code> must exactly match the originating request. If execution fails, send <code>is_error: True</code> with a useful error message.</p>
+<h3>Tool loop and routing</h3>
+<p>Continue until <code>response.stop_reason != "tool_use"</code>:</p>
+<pre><code><span class="kw">def</span> text_from_message(message):
+    <span class="kw">return</span> <span class="str">"\n"</span>.join(
+        block.text <span class="kw">for</span> block <span class="kw">in</span> message.content <span class="kw">if</span> block.type == <span class="str">"text"</span>
+    )
+
+<span class="kw">def</span> run_tool(name, tool_input):
+    <span class="kw">if</span> name == <span class="str">"get_current_datetime"</span>:
+        <span class="kw">return</span> get_current_datetime(**tool_input)
+    <span class="kw">raise</span> ValueError(f<span class="str">"Unknown tool: {name}"</span>)
+
+<span class="kw">def</span> run_conversation(messages, tools):
+    <span class="kw">while</span> <span class="kw">True</span>:
+        response = chat(messages, tools=tools)
+        messages.append({<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: response.content})
+        <span class="kw">if</span> response.stop_reason != <span class="str">"tool_use"</span>:
+            <span class="kw">return</span> response
+
+        results = []
+        <span class="kw">for</span> block <span class="kw">in</span> response.content:
+            <span class="kw">if</span> block.type != <span class="str">"tool_use"</span>:
+                <span class="kw">continue</span>
+            <span class="kw">try</span>:
+                output = run_tool(block.name, block.input)
+                results.append({
+                    <span class="str">"type"</span>: <span class="str">"tool_result"</span>,
+                    <span class="str">"tool_use_id"</span>: block.id,
+                    <span class="str">"content"</span>: json.dumps(output),
+                    <span class="str">"is_error"</span>: <span class="kw">False</span>,
+                })
+            <span class="kw">except</span> Exception <span class="kw">as</span> exc:
+                results.append({
+                    <span class="str">"type"</span>: <span class="str">"tool_result"</span>,
+                    <span class="str">"tool_use_id"</span>: block.id,
+                    <span class="str">"content"</span>: f<span class="str">"Error: {exc}"</span>,
+                    <span class="str">"is_error"</span>: <span class="kw">True</span>,
+                })
+        messages.append({<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: results})</code></pre>
+<p>Claude may issue multiple tool calls in one response; process every <code>tool_use</code> block and return one corresponding result per ID.</p>
+</section>
+
+<section class="section">
+<h2>8. Built-in tools and fine-grained calling</h2>
+<h3>Web search</h3>
+<p>The built-in web search tool can retrieve current or specialized information. Enable it in the organization settings first, then provide the appropriate schema, for example:</p>
+<pre><code>web_search_schema = {
+    <span class="str">"type"</span>: <span class="str">"web_search_20250305"</span>,
+    <span class="str">"name"</span>: <span class="str">"web_search"</span>,
+    <span class="str">"max_uses"</span>: <span class="num">5</span>,
+    <span class="str">"allowed_domains"</span>: [<span class="str">"nih.gov"</span>],  <span class="com"># optional restriction</span>
+}</code></pre>
+<p>Use <code>max_uses</code> to cap searches. Domain restrictions are useful for authoritative-source workflows. The response may contain search queries, result blocks, and citation blocks; render citations and sources in the UI.</p>
+<h3>Text editor tool</h3>
+<p>The text editor tool can view files/directories, inspect line ranges, replace text, create files, insert text, and undo edits. Claude supplies the tool knowledge, but your application must implement file operations and enforce sandboxing and permissions. The schema stub depends on the model/tool version, so consult current Anthropic documentation before deployment.</p>
+<h3>Fine-grained tool calling</h3>
+<p>Normal tool streaming may buffer until complete top-level JSON key/value pairs are validated. Fine-grained calling reduces buffering by disabling API-side JSON validation:</p>
+<ul>
+<li>Enables more immediate argument chunks.</li>
+<li>Requires robust handling of incomplete or invalid JSON.</li>
+<li>Use only when responsiveness matters and your parser can recover safely.</li>
+</ul>
+<pre><code><span class="kw">try</span>:
+    parsed_args = json.loads(snapshot)
+<span class="kw">except</span> json.JSONDecodeError:
+    <span class="com"># Wait for more chunks or handle malformed input safely.</span>
+    <span class="kw">pass</span></code></pre>
+</section>
+
+<section class="section">
+<h2>9. Production checklist</h2>
+<ul>
+<li>[ ] Store the API key in a secret manager or environment variable.</li>
+<li>[ ] Pin and regularly review SDK/model versions.</li>
+<li>[ ] Set an appropriate <code>max_tokens</code> limit.</li>
+<li>[ ] Keep conversation history bounded or summarize old turns.</li>
+<li>[ ] Validate and parse all structured model output.</li>
+<li>[ ] Define prompt evaluation datasets and regression tests.</li>
+<li>[ ] Use code graders for syntax/format and model graders for semantics.</li>
+<li>[ ] Preserve complete multi-block messages when using tools.</li>
+<li>[ ] Match every <code>tool_result</code> to its exact <code>tool_use_id</code>.</li>
+<li>[ ] Validate tool arguments and authorize side effects server-side.</li>
+<li>[ ] Handle tool failures, retries, timeouts, rate limits, and unknown tools.</li>
+<li>[ ] Add logging, tracing, cost tracking, and redaction of sensitive data.</li>
+<li>[ ] Use streaming when latency affects UX; store the final assembled message.</li>
+<li>[ ] Confirm current Anthropic documentation for model names, tool versions, and organization-level features.</li>
+</ul>
+<h3>Quick mental model</h3>
+<p><strong>Prompt &rarr; response blocks &rarr; optional tool execution &rarr; tool results &rarr; repeat &rarr; final text.</strong></p>
+<p>The most reliable Claude applications combine explicit instructions, structured context, representative examples, automated evaluation, strict output validation, and carefully controlled tool execution.</p>
+</section>
+</div>
+</main>
+</body>
+</html>
