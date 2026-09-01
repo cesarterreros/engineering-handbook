@@ -543,6 +543,149 @@ messages.append({<span class="str">"role"</span>: <span class="str">"user"</span
 <p><strong>Prompt &rarr; response blocks &rarr; optional tool execution &rarr; tool results &rarr; repeat &rarr; final text.</strong></p>
 <p>The most reliable Claude applications combine explicit instructions, structured context, representative examples, automated evaluation, strict output validation, and carefully controlled tool execution.</p>
 </section>
+
+<section class="section">
+<h2>10. RAG &amp; Agentic Search</h2>
+<h3>What is RAG?</h3>
+<p><strong>Retrieval Augmented Generation (RAG)</strong> means retrieving relevant document chunks, then generating answers with those chunks in the prompt. Use it when documents are too large or expensive to fit entirely in one prompt.</p>
+<p><strong>Why not stuff everything in the prompt?</strong></p>
+<ul>
+<li>Hard token limits; very long prompts degrade quality.</li>
+<li>Higher cost and latency.</li>
+<li>Claude becomes less effective with massive context.</li>
+</ul>
+<p><strong>RAG trade-off:</strong> more engineering upfront (chunking + search) for scalability, lower cost, and faster responses on large or multiple documents.</p>
+
+<h3>Core RAG workflow</h3>
+<ol>
+<li><strong>Preprocess:</strong> split documents into chunks.</li>
+<li><strong>Index:</strong> store chunks in a searchable index (vector DB, BM25, hybrid).</li>
+<li><strong>Query:</strong> embed/analyze the user question; retrieve top-k relevant chunks.</li>
+<li><strong>Prompt:</strong> inject only the retrieved chunks and question into Claude.</li>
+<li><strong>Answer:</strong> Claude responds using the provided context.</li>
+</ol>
+<p><strong>When to use RAG:</strong> very large documents, many documents, or when you must optimize cost and performance.</p>
+
+<h3>Chunking strategies</h3>
+<p>Pick a strategy based on the guarantees provided by the document.</p>
+<p><strong>Size-based (character/token) chunking</strong></p>
+<ul>
+<li>Split text into fixed-length pieces; add overlap to preserve context.</li>
+<li><strong>Pros:</strong> simple, works on any content (including code/PDFs).</li>
+<li><strong>Cons:</strong> can cut sentences or headers; may lose local context without overlap.</li>
+</ul>
+<pre><code><span class="kw">def</span> chunk_by_char(text, chunk_size=<span class="num">150</span>, chunk_overlap=<span class="num">20</span>):
+    chunks = []
+    start_idx = <span class="num">0</span>
+    <span class="kw">while</span> start_idx &lt; len(text):
+        end_idx = min(start_idx + chunk_size, len(text))
+        chunk_text = text[start_idx:end_idx]
+        chunks.append(chunk_text)
+        start_idx = (
+            end_idx - chunk_overlap <span class="kw">if</span> end_idx &lt; len(text) <span class="kw">else</span> len(text)
+        )
+    <span class="kw">return</span> chunks</code></pre>
+
+<p><strong>Structure-based chunking</strong></p>
+<ul>
+<li>Split by natural document structure (headers, sections).</li>
+<li><strong>Pros:</strong> high-quality, semantically coherent chunks.</li>
+<li><strong>Cons:</strong> requires well-structured inputs (for example, Markdown).</li>
+</ul>
+<pre><code><span class="kw">import</span> re
+
+<span class="kw">def</span> chunk_by_section(document_text):
+    pattern = <span class="str">r"\n## "</span>
+    <span class="kw">return</span> re.split(pattern, document_text)</code></pre>
+
+<p><strong>Sentence-based chunking</strong></p>
+<ul>
+<li>Split into sentences; group N sentences per chunk with optional overlap.</li>
+<li><strong>Pros:</strong> good middle ground; preserves sentence boundaries.</li>
+<li><strong>Cons:</strong> needs sentence splitting; chunk size varies.</li>
+</ul>
+<pre><code><span class="kw">def</span> chunk_by_sentence(text, max_sentences_per_chunk=<span class="num">5</span>, overlap_sentences=<span class="num">1</span>):
+    sentences = re.split(<span class="str">r"(?&lt;=[.!?])\s+"</span>, text)
+    chunks = []
+    start_idx = <span class="num">0</span>
+    <span class="kw">while</span> start_idx &lt; len(sentences):
+        end_idx = min(start_idx + max_sentences_per_chunk, len(sentences))
+        current_chunk = sentences[start_idx:end_idx]
+        chunks.append(<span class="str">" "</span>.join(current_chunk))
+        start_idx += max_sentences_per_chunk - overlap_sentences
+        <span class="kw">if</span> start_idx &lt; <span class="num">0</span>:
+            start_idx = <span class="num">0</span>
+    <span class="kw">return</span> chunks</code></pre>
+
+<p><strong>Semantic-based chunking</strong></p>
+<ul>
+<li>Group sentences by semantic similarity (NLP/embeddings).</li>
+<li><strong>Pros:</strong> most relevant chunks.</li>
+<li><strong>Cons:</strong> computationally expensive; complex to implement.</li>
+</ul>
+<p><strong>Practical default:</strong> size-based chunking with overlap. It is reliable across arbitrary documents and will not break your pipeline.</p>
+
+<h3>Retrieval and ranking tips</h3>
+<ul>
+<li>Use <strong>hybrid retrieval</strong> (dense vector + keyword/BM25) to reduce misses from synonym and polysemy issues.</li>
+<li>Retrieve <strong>top-k</strong> chunks (for example, 3-8) and consider <strong>re-ranking</strong> by a small model for precision.</li>
+<li>Add <strong>metadata</strong> to chunks (source, section, page) to improve filtering and citations.</li>
+<li>Watch for <strong>context gaps:</strong> a single chunk may omit necessary definitions; consider retrieving neighboring chunks or a small context window around hits.</li>
+</ul>
+
+<h3>Prompt pattern for RAG</h3>
+<p>Keep it tight and explicit:</p>
+<pre><code>You are an assistant that answers using only the provided context.
+If the context doesn&#39;t contain the answer, say so.
+
+&lt;context&gt;
+{retrieved_chunks}
+&lt;/context&gt;
+
+&lt;question&gt;
+{user_question}
+&lt;/question&gt;
+
+Answer concisely. Cite the section/source when possible.</code></pre>
+<p>Add instructions to avoid hallucination and to state uncertainty when context is insufficient.</p>
+
+<h3>Common pitfalls and fixes</h3>
+<ul>
+<li><strong>Wrong domain results</strong> (for example, bugs in medical versus software content): improve chunk boundaries and use hybrid retrieval; add metadata filters.</li>
+<li><strong>Lost section context:</strong> include headers with each chunk or retrieve adjacent chunks.</li>
+<li><strong>Over-retrieval:</strong> too many chunks bloat prompts; tune k and re-rank.</li>
+<li><strong>Under-retrieval:</strong> increase k, improve embeddings, or add query rewriting.</li>
+<li><strong>Stale data:</strong> rebuild indexes when documents change; version your index.</li>
+</ul>
+
+<h3>Agentic search (tool-augmented RAG)</h3>
+<p>Extend RAG with tools so the agent can:</p>
+<ul>
+<li><strong>Search</strong> internal indexes or web sources.</li>
+<li><strong>Filter</strong> by metadata (date, domain, section).</li>
+<li><strong>Iterate:</strong> retrieve &rarr; reason &rarr; decide to fetch more &rarr; answer.</li>
+</ul>
+<p><strong>Pattern:</strong></p>
+<ol>
+<li>User query &rarr; agent decides to call <code>search(query, filters)</code>.</li>
+<li>Tool returns top results (snippets + metadata).</li>
+<li>Agent evaluates sufficiency; if insufficient, refines the query or fetches more.</li>
+<li>Final answer is synthesized from retrieved evidence; include citations.</li>
+</ol>
+<p>Use this when a single static retrieval is not enough or when you need multi-source synthesis.</p>
+
+<h3>Quick checklist (production)</h3>
+<ul>
+<li>[ ] Choose a chunking strategy based on document structure guarantees.</li>
+<li>[ ] Add overlap for size-based chunking to preserve context.</li>
+<li>[ ] Store chunk metadata (source, section, page, timestamp).</li>
+<li>[ ] Use hybrid retrieval + re-ranking; tune top-k.</li>
+<li>[ ] Instruct the model to rely on provided context and cite sources.</li>
+<li>[ ] Handle insufficient context explicitly.</li>
+<li>[ ] Monitor retrieval quality (precision/recall) and answer faithfulness.</li>
+<li>[ ] Re-index on document updates; version your index.</li>
+</ul>
+</section>
 </div>
 </main>
 </body>
