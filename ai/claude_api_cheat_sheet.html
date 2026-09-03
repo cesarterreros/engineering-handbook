@@ -685,6 +685,215 @@ Answer concisely. Cite the section/source when possible.</code></pre>
 <li>[ ] Monitor retrieval quality (precision/recall) and answer faithfulness.</li>
 <li>[ ] Re-index on document updates; version your index.</li>
 </ul>
+
+<h3>Text embeddings</h3>
+<ul>
+<li><strong>Semantic search</strong> retrieves chunks based on meaning and context rather than exact keyword matches.</li>
+<li>A <strong>text embedding</strong> is a numerical vector representing the semantic meaning of text.</li>
+<li>An embedding model converts text into a list of floating-point numbers, commonly in the range <code>[-1, 1]</code>.</li>
+<li>Embedding dimensions are learned features; their individual meanings are generally not directly interpretable by humans.</li>
+<li>Embeddings allow text to be compared mathematically.</li>
+</ul>
+<h3>VoyageAI example</h3>
+<p>Anthropic does not provide embedding generation in this workflow, so VoyageAI is used as the embedding provider.</p>
+<pre><code>pip install voyageai</code></pre>
+<p><code>.env</code>:</p>
+<pre><code><span class="attr">VOYAGE_API_KEY</span>=<span class="str">"your_key_here"</span></code></pre>
+<p>Python:</p>
+<pre><code><span class="kw">from</span> dotenv <span class="kw">import</span> load_dotenv
+<span class="kw">import</span> voyageai
+
+load_dotenv()
+
+client = voyageai.Client()
+
+<span class="kw">def</span> generate_embedding(
+    text,
+    model=<span class="str">"voyage-3-large"</span>,
+    input_type=<span class="str">"query"</span>
+):
+    result = client.embed(
+        [text],
+        model=model,
+        input_type=input_type
+    )
+    <span class="kw">return</span> result.embeddings[<span class="num">0</span>]</code></pre>
+<ul>
+<li>Embeddings can be generated individually or in batches.</li>
+<li>The embedding API typically normalizes vectors to magnitude <code>1.0</code>.</li>
+<li>Use the appropriate <code>input_type</code> for queries versus documents when supported by the model.</li>
+</ul>
+
+<h3>Complete RAG pipeline</h3>
+<p>A basic RAG pipeline:</p>
+<ol>
+<li>Split source documents into logical chunks.</li>
+<li>Generate an embedding for every chunk.</li>
+<li>Store embeddings and original content in a vector database.</li>
+<li>Embed the user&rsquo;s query using the same embedding model.</li>
+<li>Search for the most similar chunks.</li>
+<li>Insert the retrieved chunks into the LLM prompt.</li>
+<li>Generate an answer grounded in the retrieved context.</li>
+</ol>
+<h3>Preprocessing versus query time</h3>
+<ul>
+<li><strong>Preprocessing:</strong> chunk documents, generate embeddings, and populate the vector database.</li>
+<li><strong>Query time:</strong> embed the user question, search the database, and construct the final prompt.</li>
+</ul>
+<h3>Important storage rule</h3>
+<p>Always store the original chunk text&mdash;or a reference to it&mdash;alongside its embedding. The embedding alone is not useful for constructing the final LLM prompt.</p>
+<pre><code>chunks = chunk_by_section(text)
+embeddings = generate_embedding(chunks)
+
+store = VectorIndex()
+
+<span class="kw">for</span> embedding, chunk <span class="kw">in</span> zip(embeddings, chunks):
+    store.add_vector(
+        embedding,
+        {<span class="str">"content"</span>: chunk}
+    )</code></pre>
+<p>Query example:</p>
+<pre><code>user_embedding = generate_embedding(
+    <span class="str">"What did the software engineering department do last year?"</span>
+)
+
+results = store.search(user_embedding, <span class="num">2</span>)
+
+<span class="kw">for</span> doc, distance <span class="kw">in</span> results:
+    print(distance, doc[<span class="str">"content"</span>][:<span class="num">200</span>])</code></pre>
+
+<h3>Similarity metrics</h3>
+<h3>Cosine similarity</h3>
+<p>Cosine similarity measures the angle between two vectors:</p>
+<ul>
+<li>Range: <code>-1</code> to <code>1</code>.</li>
+<li>Near <code>1</code>: highly similar.</li>
+<li>Near <code>0</code>: weak or no directional relationship.</li>
+<li>Near <code>-1</code>: opposite directions.</li>
+</ul>
+<p>For normalized vectors, cosine similarity can be computed efficiently using the dot product.</p>
+<h3>Cosine distance</h3>
+<pre><code>cosine_distance = 1 - cosine_similarity</code></pre>
+<p>Interpretation:</p>
+<ul>
+<li>Near <code>0</code>: highly similar.</li>
+<li>Larger values: less similar.</li>
+</ul>
+<p><strong>Do not confuse ranking direction:</strong> similarity is better when higher; distance is better when lower.</p>
+
+<h3>BM25 lexical search</h3>
+<p>Semantic search can miss exact identifiers, codes, names, or technical phrases. BM25 provides lexical search based on exact term matching.</p>
+<p>BM25 is especially useful for:</p>
+<ul>
+<li>Incident IDs.</li>
+<li>Product codes.</li>
+<li>Error messages.</li>
+<li>Legal or financial terminology.</li>
+<li>Proper names.</li>
+<li>Exact phrases.</li>
+</ul>
+<h3>BM25 process</h3>
+<ol>
+<li>Tokenize the query.</li>
+<li>Count term frequency in documents.</li>
+<li>Give greater weight to rare terms.</li>
+<li>Rank documents containing the most important query terms.</li>
+</ol>
+<p>Rare terms receive higher importance than common words.</p>
+<pre><code>chunks = chunk_by_section(text)
+
+store = BM25Index()
+
+<span class="kw">for</span> chunk <span class="kw">in</span> chunks:
+    store.add_document({<span class="str">"content"</span>: chunk})
+
+results = store.search(
+    <span class="str">"What happened with INC-2023-Q4-011?"</span>,
+    <span class="num">3</span>
+)</code></pre>
+<h3>Semantic versus lexical search</h3>
+<table>
+<thead><tr><th>Search type</th><th>Strength</th><th>Limitation</th></tr></thead>
+<tbody>
+<tr><td>Semantic/vector</td><td>Understands meaning and conceptual similarity</td><td>May miss exact identifiers</td></tr>
+<tr><td>Lexical/BM25</td><td>Finds exact terms and rare phrases</td><td>Does not understand meaning well</td></tr>
+<tr><td>Hybrid</td><td>Combines both strengths</td><td>Requires result fusion</td></tr>
+</tbody>
+</table>
+
+<h3>Hybrid retrieval</h3>
+<p>A robust RAG system usually combines vector search and BM25 search.</p>
+<h3>Architecture</h3>
+<ul>
+<li><code>VectorIndex</code>: retrieves conceptually similar chunks.</li>
+<li><code>BM25Index</code>: retrieves exact term matches.</li>
+<li><code>Retriever</code>: queries both indexes and merges their rankings.</li>
+<li>All indexes should expose a consistent interface, such as:
+  <ul>
+  <li><code>add_document(document)</code></li>
+  <li><code>search(query, k)</code></li>
+  </ul>
+</li>
+</ul>
+<pre><code><span class="kw">class</span> Retriever:
+    <span class="kw">def</span> __init__(self, *indexes):
+        <span class="kw">if</span> len(indexes) == <span class="num">0</span>:
+            <span class="kw">raise</span> ValueError(<span class="str">"At least one index must be provided"</span>)
+        self._indexes = list(indexes)
+
+    <span class="kw">def</span> add_document(self, document):
+        <span class="kw">for</span> index <span class="kw">in</span> self._indexes:
+            index.add_document(document)</code></pre>
+<p>This modular design makes indexes interchangeable, testable, and extensible.</p>
+
+<h3>Reciprocal Rank Fusion</h3>
+<p>Search systems often produce incompatible score scales, so merge <strong>rank positions</strong> instead of raw scores.</p>
+<h3>Formula</h3>
+<pre><code>RRF(d) = &#931;_i 1 / (k + rank_i(d))</code></pre>
+<p>Where:</p>
+<ul>
+<li><code>d</code> is a document or chunk.</li>
+<li><code>rank_i(d)</code> is its position in search result list <code>i</code>.</li>
+<li><code>k</code> is a smoothing constant, commonly <code>60</code>.</li>
+<li>Higher RRF scores indicate better combined rankings.</li>
+</ul>
+<p>Example with <code>k=1</code>:</p>
+<ul>
+<li>Section 2: ranks 1 and 2 &rarr; <code>1/(1+1) + 1/(1+2) = 0.833</code></li>
+<li>Section 7: ranks 2 and 3 &rarr; <code>1/(1+2) + 1/(1+3) = 0.583</code></li>
+<li>Section 6: ranks 3 and 1 &rarr; <code>1/(1+3) + 1/(1+1) = 0.750</code></li>
+</ul>
+<p>Final ranking:</p>
+<pre><code>Section 2 &gt; Section 6 &gt; Section 7</code></pre>
+<p>A document that performs well across multiple retrieval methods is promoted.</p>
+
+<h3>Practical design principles</h3>
+<ul>
+<li>Use <strong>logical document sections</strong> as chunks when the document structure is meaningful.</li>
+<li>Generate document embeddings in batches for efficiency.</li>
+<li>Embed queries with the same embedding model used for the indexed content.</li>
+<li>Preserve original text and metadata with every vector.</li>
+<li>Use vector search for conceptual questions.</li>
+<li>Use BM25 for exact terms and identifiers.</li>
+<li>Prefer hybrid retrieval for production RAG systems.</li>
+<li>Merge rankings with RRF rather than directly comparing incompatible scores.</li>
+<li>Keep retrieval indexes behind a common interface.</li>
+<li>Add new retrieval strategies&mdash;keyword, graph, or domain-specific indexes&mdash;by implementing the same interface.</li>
+<li>Retrieve the top <code>k</code> chunks, then place them in a clearly delimited prompt context.</li>
+</ul>
+<p>A useful mental model is:</p>
+<pre><code>Documents
+  &rarr; chunks
+  &rarr; embeddings + metadata
+  &rarr; vector index
+
+User query
+  &rarr; query embedding
+  &rarr; vector search
+  &rarr; BM25 search
+  &rarr; RRF fusion
+  &rarr; retrieved context
+  &rarr; LLM answer</code></pre>
 </section>
 </div>
 </main>
