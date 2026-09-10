@@ -521,8 +521,10 @@ messages.append({<span class="str">"role"</span>: <span class="str">"user"</span
     <span class="kw">pass</span></code></pre>
 </section>
 
+
+
 <section class="section">
-<h2>9. Production checklist</h2>
+<h2>10. Production checklist</h2>
 <ul>
 <li>[ ] Store the API key in a secret manager or environment variable.</li>
 <li>[ ] Pin and regularly review SDK/model versions.</li>
@@ -545,7 +547,7 @@ messages.append({<span class="str">"role"</span>: <span class="str">"user"</span
 </section>
 
 <section class="section">
-<h2>10. RAG &amp; Agentic Search</h2>
+<h2>11. RAG &amp; Agentic Search</h2>
 <h3>What is RAG?</h3>
 <p><strong>Retrieval Augmented Generation (RAG)</strong> means retrieving relevant document chunks, then generating answers with those chunks in the prompt. Use it when documents are too large or expensive to fit entirely in one prompt.</p>
 <p><strong>Why not stuff everything in the prompt?</strong></p>
@@ -895,7 +897,177 @@ User query
   &rarr; retrieved context
   &rarr; LLM answer</code></pre>
 </section>
-</div>
+
+
+<section class="section">
+<h2>12. Features of Claude</h2>
+<h3>Extended thinking</h3>
+<ul>
+<li>Use <strong>Extended Thinking</strong> for complex reasoning when standard prompting, even after optimization, does not reach the required accuracy.</li>
+<li>It returns a structured response containing a thinking block and a final answer block.</li>
+<li><strong>Benefits:</strong> better reasoning on difficult tasks, potentially higher accuracy, and greater visibility into the model's reasoning process.</li>
+<li><strong>Trade-offs:</strong> higher cost because thinking tokens are billed, increased latency, and more complex response parsing.</li>
+<li>Important compatibility restrictions exist with features such as message pre-filling and temperature. Check Anthropic's compatibility documentation before combining features.</li>
+<li>The thinking block includes a cryptographic signature to prevent modification or tampering.</li>
+<li>Thinking may be returned as <strong>redacted thinking</strong> when internal safety systems flag its content. Preserve and pass the complete block back in subsequent requests to retain context.</li>
+</ul>
+<p>Configuration pattern:</p>
+<pre><code>params[<span class="str">"thinking"</span>] = {
+    <span class="str">"type"</span>: <span class="str">"enabled"</span>,
+    <span class="str">"budget"</span>: thinking_budget
+}</code></pre>
+<ul>
+<li>The minimum thinking budget is <strong>1,024 tokens</strong>.</li>
+<li><code>max_tokens</code> must be greater than the thinking budget.</li>
+</ul>
+<p><strong>Recommended workflow:</strong></p>
+<ol>
+<li>Test with standard prompting.</li>
+<li>Improve the prompt.</li>
+<li>Enable extended thinking only if accuracy remains insufficient.</li>
+<li>Test that your application handles both readable and redacted thinking blocks.</li>
+</ol>
+
+<h3>Image support</h3>
+<p>Claude can describe, compare, count, classify, and analyze images.</p>
+<ul>
+<li><strong>Limits:</strong> maximum 100 images across all messages in one request; maximum 5 MB per image.</li>
+<li>One image can have a maximum dimension of 8,000 px; multiple images can have a maximum dimension of 2,000 px.</li>
+<li>Images can be sent as Base64-encoded data or a URL.</li>
+</ul>
+<p><strong>Approximate image token cost:</strong> <code>image tokens = (width &times; height) / 750</code></p>
+<p>Send images using an <code>image</code> block alongside a text block:</p>
+<pre><code>{
+    <span class="str">"type"</span>: <span class="str">"image"</span>,
+    <span class="str">"source"</span>: {
+        <span class="str">"type"</span>: <span class="str">"base64"</span>,
+        <span class="str">"media_type"</span>: <span class="str">"image/png"</span>,
+        <span class="str">"data"</span>: image_bytes
+    }
+}</code></pre>
+<p>Image prompting follows the same principles as text prompting:</p>
+<ul>
+<li>Give explicit instructions and specify an analysis methodology.</li>
+<li>Break complex tasks into steps and use one-shot or multi-shot examples.</li>
+<li>Ask the model to verify its result using a second method.</li>
+<li>For counting objects, request object-by-object identification followed by an independent recount.</li>
+<li>For visual risk assessment, define what to identify, the measurements or categories, the scoring rubric, and the exact output format.</li>
+</ul>
+<h3>Reliable visual-analysis pattern</h3>
+<pre><code>Analyze the image using these steps:
+
+1. Identify the relevant objects or structures.
+2. Examine each object according to the specified criteria.
+3. Estimate or categorize the required measurements.
+4. Verify the findings using an independent method.
+5. Return one sentence per step and a final numerical rating.</code></pre>
+
+<h3>PDF support</h3>
+<p>PDFs are sent as <code>document</code> blocks rather than <code>image</code> blocks.</p>
+<pre><code>{
+    <span class="str">"type"</span>: <span class="str">"document"</span>,
+    <span class="str">"source"</span>: {
+        <span class="str">"type"</span>: <span class="str">"base64"</span>,
+        <span class="str">"media_type"</span>: <span class="str">"application/pdf"</span>,
+        <span class="str">"data"</span>: file_bytes
+    }
+}</code></pre>
+<ul>
+<li>When adapting image code for PDFs, use <code>.pdf</code> instead of <code>.png</code>, rename <code>image_bytes</code> to <code>file_bytes</code>, and set <code>"type"</code> to <code>"document"</code>.</li>
+<li>Claude can analyze text, images and charts, tables and relationships, and document structure and formatting.</li>
+<li>Use PDFs for document summarization, extraction, visual analysis, table interpretation, and question answering.</li>
+</ul>
+
+<h3>Citations</h3>
+<p>Citations ground Claude's answers in the supplied source instead of leaving users with an unverifiable response.</p>
+<p>For PDF citations, add a readable title and enable citations:</p>
+<pre><code>{
+    <span class="str">"type"</span>: <span class="str">"document"</span>,
+    <span class="str">"source"</span>: {
+        <span class="str">"type"</span>: <span class="str">"base64"</span>,
+        <span class="str">"media_type"</span>: <span class="str">"application/pdf"</span>,
+        <span class="str">"data"</span>: file_bytes
+    },
+    <span class="str">"title"</span>: <span class="str">"earth.pdf"</span>,
+    <span class="str">"citations"</span>: {
+        <span class="str">"enabled"</span>: <span class="kw">True</span>
+    }
+}</code></pre>
+<p>Citation metadata can include <code>cited_text</code>, <code>document_index</code>, <code>document_title</code>, <code>start_page_number</code>, and <code>end_page_number</code>. For plain text documents, citations use character positions instead of page numbers.</p>
+<p>Citations are especially useful when users must verify claims, documents are authoritative, transparency is important, or users need to inspect surrounding context.</p>
+
+<h3>Prompt caching</h3>
+<p>Prompt caching reuses preprocessing work from previous requests. It can make repeated requests faster and cheaper.</p>
+<ul>
+<li><strong>Best use cases:</strong> multiple questions about the same large document, iterative editing with stable source material, large system prompts, and reusable tool definitions.</li>
+<li>Cache lifetime is <strong>one hour</strong>; caching is not automatic, so add explicit cache breakpoints.</li>
+<li>A breakpoint caches all content up to and including that point. Follow-up requests use the cache only when that content is identical; even one changed character can invalidate it.</li>
+<li>Cached content must contain at least <strong>1,024 tokens</strong>, and you can use up to <strong>four cache breakpoints</strong>.</li>
+<li>Processing order is <code>Tools &rarr; System prompt &rarr; Messages</code>.</li>
+<li>Suitable targets include stable system prompts, tool schemas, reusable conversation history, and unchanged image or document blocks.</li>
+<li>A breakpoint can span multiple messages and block types.</li>
+</ul>
+<p>Use the expanded text-block format because shorthand strings do not support <code>cache_control</code>:</p>
+<pre><code>{
+    <span class="str">"type"</span>: <span class="str">"text"</span>,
+    <span class="str">"text"</span>: system,
+    <span class="str">"cache_control"</span>: {
+        <span class="str">"type"</span>: <span class="str">"ephemeral"</span>
+    }
+}</code></pre>
+<p>To cache tool schemas, add the breakpoint to the final tool:</p>
+<pre><code>tools_clone = tools.copy()
+last_tool = tools_clone[-1].copy()
+last_tool[<span class="str">"cache_control"</span>] = {<span class="str">"type"</span>: <span class="str">"ephemeral"</span>}
+tools_clone[-1] = last_tool
+params[<span class="str">"tools"</span>] = tools_clone</code></pre>
+<p>Usage indicators are <code>cache_creation_input_tokens</code> for tokens written to cache and <code>cache_read_input_tokens</code> for tokens retrieved. If only part of a request changes, Claude may read unchanged cached components while recreating changed components.</p>
+
+<h3>Files API and code execution</h3>
+<h3>Files API</h3>
+<p>Upload files separately and receive a reusable file ID. Reference the file ID in later messages instead of embedding the file repeatedly as Base64.</p>
+<ul>
+<li>Useful for reusing the same file and for large PDFs, images, or datasets.</li>
+<li>It separates file management from inference requests.</li>
+</ul>
+<h3>Code execution</h3>
+<p>Claude can execute Python through a predefined server-side tool in an isolated Docker container.</p>
+<ul>
+<li>The environment has no network access, can execute code multiple times in one conversation, and returns execution results for Claude to interpret.</li>
+<li>Code execution is useful for data analysis, plotting, image processing, document transformation, mathematical modeling, and report generation.</li>
+</ul>
+<h3>Files API + code execution workflow</h3>
+<ol>
+<li>Upload a file through the Files API.</li>
+<li>Include its file ID in a <code>container_upload</code> block.</li>
+<li>Ask Claude to analyze or transform it.</li>
+<li>Claude writes and executes Python code.</li>
+<li>Claude can create plots, reports, or other output files.</li>
+<li>Download generated files using the file IDs returned in <code>code_execution_output</code> blocks.</li>
+</ol>
+<pre><code>{
+    <span class="str">"type"</span>: <span class="str">"container_upload"</span>,
+    <span class="str">"file_id"</span>: file_metadata.id
+}</code></pre>
+<p>Enable code execution with:</p>
+<pre><code>tools=[
+    {
+        <span class="str">"type"</span>: <span class="str">"code_execution_20250522"</span>,
+        <span class="str">"name"</span>: <span class="str">"code_execution"</span>
+    }
+]</code></pre>
+<p>Code-execution responses may contain normal text blocks, server tool-use blocks containing code, and code-execution result blocks. Always parse structured responses defensively, including thinking, citation, tool-use, redacted, and generated-file blocks.</p>
+
+<h3>Practical rules</h3>
+<ul>
+<li>Prefer standard prompting first; use extended thinking only when needed.</li>
+<li>For vision tasks, provide a repeatable methodology rather than a vague question.</li>
+<li>For document-heavy applications, combine PDF support, citations, and prompt caching.</li>
+<li>Cache stable tools and system prompts to reduce latency and cost.</li>
+<li>Use the Files API for files that will be referenced repeatedly.</li>
+<li>Use code execution for computational or file-generation tasks, while designing around its lack of network access.</li>
+</ul>
+</section></div>
 </main>
 </body>
 </html>
