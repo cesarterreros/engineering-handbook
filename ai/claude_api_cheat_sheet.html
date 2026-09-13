@@ -1067,7 +1067,443 @@ params[<span class="str">"tools"</span>] = tools_clone</code></pre>
 <li>Use the Files API for files that will be referenced repeatedly.</li>
 <li>Use code execution for computational or file-generation tasks, while designing around its lack of network access.</li>
 </ul>
-</section></div>
+</section>
+
+<section class="section">
+<h2>13. Model Context Protocol (MCP)</h2>
+<h3>MCP in one sentence</h3>
+<p><strong>Model Context Protocol (MCP)</strong> is a standardized communication layer that lets AI applications connect to external data and functionality through reusable MCP servers, avoiding the need to implement and maintain every integration manually.</p>
+
+<h3>Core idea</h3>
+<ul>
+<li><strong>MCP client:</strong> Connects an application to MCP servers.</li>
+<li><strong>MCP server:</strong> Exposes tools, resources, and prompts for an external service.</li>
+<li><strong>AI model:</strong> Uses the capabilities exposed by the MCP server.</li>
+<li><strong>External service:</strong> GitHub, databases, files, APIs, Jira, Slack, browsers, and other systems.</li>
+</ul>
+<p>MCP is not the same as model tool use:</p>
+<ul>
+<li><strong>Tool use</strong> describes the model requesting an action.</li>
+<li><strong>MCP</strong> defines how tools, resources, and prompts are packaged, discovered, and executed by external servers.</li>
+</ul>
+
+<h3>MCP architecture</h3>
+<pre><code>User
+  ↓
+Application / AI agent
+  ↓
+MCP client
+  ↓
+MCP server
+  ↓
+External service, database, filesystem, or API</code></pre>
+<p>An MCP server acts as a reusable wrapper around an external service. For example, a GitHub MCP server can expose operations for repositories, issues, pull requests, and projects without the application author having to implement every GitHub API schema and function.</p>
+
+<h3>Who creates MCP servers?</h3>
+<ul>
+<li>Service providers can publish official servers.</li>
+<li>Companies can build internal servers for proprietary systems.</li>
+<li>Individual developers can create custom servers.</li>
+<li>Applications generally implement either an MCP client or an MCP server, not both. Implementing both is mainly useful for learning or building a complete platform.</li>
+</ul>
+
+<h3>Communication</h3>
+<p>MCP is <strong>transport-agnostic</strong>. Clients and servers may communicate through:</p>
+<ul>
+<li>Standard input/output (<code>stdio</code>), often when both run on the same machine.</li>
+<li>HTTP.</li>
+<li>WebSockets.</li>
+<li>Other supported network transports.</li>
+</ul>
+
+<h3>Important message pairs</h3>
+<table>
+<thead><tr><th>Message</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>ListToolsRequest</code> / <code>ListToolsResult</code></td><td>Discover the tools provided by a server.</td></tr>
+<tr><td><code>CallToolRequest</code> / <code>CallToolResult</code></td><td>Execute a tool with arguments and return its result.</td></tr>
+<tr><td><code>ReadResourceRequest</code></td><td>Request data identified by a resource URI.</td></tr>
+<tr><td>Prompt listing/getting operations</td><td>Discover prompts and retrieve an interpolated prompt.</td></tr>
+</tbody>
+</table>
+
+<h3>Typical tool-call flow</h3>
+<ol>
+<li>The user submits a request.</li>
+<li>The application asks the MCP client for available tools.</li>
+<li>The client sends <code>ListToolsRequest</code> to the MCP server.</li>
+<li>The application sends the user request and tool definitions to the model.</li>
+<li>The model selects a tool and returns a tool-use request.</li>
+<li>The application asks the MCP client to execute the tool.</li>
+<li>The client sends <code>CallToolRequest</code> to the MCP server.</li>
+<li>The MCP server calls the external service.</li>
+<li>The result returns through the MCP server and client.</li>
+<li>The application sends the result back to the model.</li>
+<li>The model generates the final response.</li>
+</ol>
+
+<h3>Tools, resources, and prompts</h3>
+<h3>Tools: perform actions</h3>
+<p>Use tools for operations that do something, such as:</p>
+<ul>
+<li>Editing a document.</li>
+<li>Creating a ticket.</li>
+<li>Sending a message.</li>
+<li>Querying or modifying a database.</li>
+<li>Calling an external API.</li>
+<li>Running a browser action.</li>
+</ul>
+<p>Tools are defined with <code>@mcp.tool</code>.</p>
+<pre><code>from mcp.server.fastmcp import FastMCP
+from pydantic import Field
+
+mcp = FastMCP("DocumentMCP", log_level="ERROR")
+
+@mcp.tool(
+    name="read_doc_contents",
+    description="Read the contents of a document and return it as a string."
+)
+def read_document(
+    doc_id: str = Field(description="ID of the document to read")
+) -> str:
+    if doc_id not in docs:
+        raise ValueError(f"Document with ID {doc_id} not found")
+    return docs[doc_id]</code></pre>
+<p>The Python SDK automatically provides:</p>
+<ul>
+<li>JSON Schema generation from type hints.</li>
+<li>Parameter validation through Pydantic.</li>
+<li>Better IDE support and type safety.</li>
+<li>Less boilerplate.</li>
+<li>Readable, maintainable tool definitions.</li>
+</ul>
+
+<h3>Resources: expose data</h3>
+<p>Use resources when the client needs to retrieve data rather than perform an action. They are conceptually similar to <code>GET</code> endpoints.</p>
+<p>Examples:</p>
+<ul>
+<li>Listing available files.</li>
+<li>Reading document contents.</li>
+<li>Exposing configuration.</li>
+<li>Providing database or application context.</li>
+<li>Supplying data directly to a model prompt.</li>
+</ul>
+<p>Resources are defined with <code>@mcp.resource</code>.</p>
+
+<h3>Direct resource</h3>
+<p>A static URI always refers to the same type of data:</p>
+<pre><code>@mcp.resource(
+    "docs://documents",
+    mime_type="application/json"
+)
+def list_docs() -> list[str]:
+    return list(docs.keys())</code></pre>
+
+<h3>Templated resource</h3>
+<p>A URI contains parameters:</p>
+<pre><code>@mcp.resource(
+    "docs://documents/{doc_id}",
+    mime_type="text/plain"
+)
+def fetch_doc(doc_id: str) -> str:
+    if doc_id not in docs:
+        raise ValueError(f"Document with ID {doc_id} not found")
+    return docs[doc_id]</code></pre>
+<p>The SDK extracts <code>{doc_id}</code> from the URI and passes it to the function.</p>
+
+<h3>Tools versus resources</h3>
+<table>
+<thead><tr><th>Feature</th><th>Tools</th><th>Resources</th></tr></thead>
+<tbody>
+<tr><td>Main purpose</td><td>Perform an action</td><td>Retrieve data</td></tr>
+<tr><td>Typical analogy</td><td><code>POST</code>, <code>PUT</code>, or command</td><td><code>GET</code></td></tr>
+<tr><td>Example</td><td>Edit a document</td><td>Read a document</td></tr>
+<tr><td>Model interaction</td><td>Model explicitly requests execution</td><td>Client retrieves and includes data as context</td></tr>
+<tr><td>Decorator</td><td><code>@mcp.tool</code></td><td><code>@mcp.resource</code></td></tr>
+</tbody>
+</table>
+<p>Resources can reduce unnecessary tool calls because data can be fetched and inserted directly into the prompt.</p>
+
+<h3>MIME types</h3>
+<p>The <code>mime_type</code> tells the client how to interpret the returned data:</p>
+<ul>
+<li><code>application/json</code> — Structured JSON.</li>
+<li><code>text/plain</code> — Plain text.</li>
+<li>Other valid MIME types — HTML, CSV, XML, images, binary files, and so on.</li>
+</ul>
+<p>The SDK handles serialization automatically.</p>
+
+<h3>Prompts</h3>
+<p>Prompts are reusable, predefined instructions exposed by an MCP server. They are useful when the server author has domain-specific instructions that are more reliable than an ad hoc user prompt.</p>
+<p>Good MCP prompts should be:</p>
+<ul>
+<li>Specific.</li>
+<li>Well-tested.</li>
+<li>Relevant to the server's purpose.</li>
+<li>Clear about expected output.</li>
+<li>Designed to work with available tools and resources.</li>
+<li>Parameterized when user-specific values are required.</li>
+</ul>
+<pre><code>from mcp.server.fastmcp import base
+
+@mcp.prompt(
+    name="format",
+    description="Rewrite a document in Markdown format."
+)
+def format_document(
+    doc_id: str = Field(description="ID of the document to format")
+) -> list[base.Message]:
+    prompt = f"""
+    Reformat the document identified by {doc_id} using Markdown.
+    Add headers, bullet points, and tables where appropriate.
+    Use the edit_document tool to apply the changes.
+    """
+    return [base.UserMessage(prompt)]</code></pre>
+
+<h3>Prompt lifecycle</h3>
+<ol>
+<li>The client calls <code>list_prompts()</code>.</li>
+<li>The user selects a prompt.</li>
+<li>The client calls <code>get_prompt(prompt_name, arguments)</code>.</li>
+<li>The server interpolates the arguments.</li>
+<li>The client receives a list of messages.</li>
+<li>The messages are sent to the model.</li>
+</ol>
+<pre><code>async def list_prompts(self) -> list[types.Prompt]:
+    result = await self.session().list_prompts()
+    return result.prompts
+
+async def get_prompt(
+    self,
+    prompt_name: str,
+    args: dict[str, str]
+):
+    result = await self.session().get_prompt(prompt_name, args)
+    return result.messages</code></pre>
+
+<h3>MCP client implementation</h3>
+<p>An MCP client usually wraps the SDK's client session to simplify communication and handle cleanup correctly.</p>
+<p>Core methods:</p>
+<pre><code>async def list_tools(self) -> list[types.Tool]:
+    result = await self.session().list_tools()
+    return result.tools
+
+async def call_tool(
+    self,
+    tool_name: str,
+    tool_input: dict
+) -> types.CallToolResult | None:
+    return await self.session().call_tool(tool_name, tool_input)</code></pre>
+
+<h3>Resource access</h3>
+<pre><code>import json
+from pydantic import AnyUrl
+
+async def read_resource(self, uri: str):
+    result = await self.session().read_resource(AnyUrl(uri))
+    resource = result.contents[0]
+
+    if isinstance(resource, types.TextResourceContents):
+        if resource.mimeType == "application/json":
+            return json.loads(resource.text)
+        return resource.text</code></pre>
+<p>The client should:</p>
+<ul>
+<li>Reuse a persistent session where appropriate.</li>
+<li>Close sessions and subprocesses reliably.</li>
+<li>Parse responses according to their MIME type.</li>
+<li>Handle missing resources and server errors.</li>
+<li>Keep transport concerns separate from application logic.</li>
+</ul>
+
+<h3>Testing and debugging</h3>
+<p>The MCP Python SDK provides a browser-based inspector.</p>
+
+<h3>Start the inspector</h3>
+<pre><code>mcp dev mcp_server.py</code></pre>
+<p>Or:</p>
+<pre><code>uv run mcp dev mcp_server.py</code></pre>
+<p>The inspector normally starts a local development server, commonly using port <code>6277</code>.</p>
+
+<h3>Inspector workflow</h3>
+<ol>
+<li>Start the MCP Inspector.</li>
+<li>Open the provided local URL.</li>
+<li>Click <strong>Connect</strong>.</li>
+<li>Navigate to <strong>Tools</strong>, <strong>Resources</strong>, or <strong>Prompts</strong>.</li>
+<li>List available items.</li>
+<li>Enter required parameters.</li>
+<li>Run the operation.</li>
+<li>Inspect the result or error.</li>
+</ol>
+<pre><code>Modify server
+  ↓
+Test one tool/resource/prompt
+  ↓
+Inspect response
+  ↓
+Fix errors
+  ↓
+Repeat</code></pre>
+<p>For state-changing operations, test a read operation afterward to confirm that the expected change was applied.</p>
+
+<h3>Minimal project setup</h3>
+<p>A typical educational MCP project may contain:</p>
+<pre><code>main.py
+mcp_client.py
+mcp_server.py
+.env
+README.md</code></pre>
+<p>Basic setup:</p>
+<pre><code># Recommended
+uv run main.py
+
+# Standard Python
+python main.py</code></pre>
+<p>Typical requirements:</p>
+<ul>
+<li>Store API keys in <code>.env</code>.</li>
+<li>Install dependencies with <code>uv</code> or <code>pip</code>.</li>
+<li>Keep the MCP server responsible for external capabilities.</li>
+<li>Keep the application responsible for user interaction and orchestration.</li>
+<li>Avoid storing secrets directly in source code.</li>
+</ul>
+</section>
+
+<section class="section">
+<h2>14. Claude Code and MCP</h2>
+<p>Claude Code is a terminal-based coding assistant that can:</p>
+<ul>
+<li>Read, search, and edit files.</li>
+<li>Execute terminal commands.</li>
+<li>Access web resources.</li>
+<li>Connect to MCP servers.</li>
+<li>Support software-development workflows from implementation through testing and deployment.</li>
+</ul>
+
+<h3>Installation example</h3>
+<pre><code>npm install -g @anthropic-ai/claude-code
+claude</code></pre>
+<p>Claude Code can run on macOS, Linux, and Windows through WSL.</p>
+
+<h3>Useful commands</h3>
+<table>
+<thead><tr><th>Command</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>/init</code></td><td>Analyze the codebase and create <code>CLAUDE.md</code>.</td></tr>
+<tr><td><code>/clear</code></td><td>Clear conversation history and reset context.</td></tr>
+<tr><td><code>#</code></td><td>Add a project, local, or user instruction to <code>CLAUDE.md</code>.</td></tr>
+</tbody>
+</table>
+
+<h3><code>CLAUDE.md</code></h3>
+<p><code>/init</code> creates project context containing information such as:</p>
+<ul>
+<li>Project structure.</li>
+<li>Dependencies.</li>
+<li>Build commands.</li>
+<li>Coding conventions.</li>
+<li>Architecture.</li>
+<li>Project-specific patterns.</li>
+</ul>
+<p>Possible scopes:</p>
+<ul>
+<li><strong>Project:</strong> Shared with the team and usually committed.</li>
+<li><strong>Local:</strong> Personal project instructions, not committed.</li>
+<li><strong>User:</strong> Instructions reused across projects.</li>
+</ul>
+
+<h3>Recommended Claude Code workflow</h3>
+<ol>
+<li>Provide relevant files and project context.</li>
+<li>Ask Claude to analyze the existing implementation.</li>
+<li>Ask for a plan without writing code.</li>
+<li>Review or refine the plan.</li>
+<li>Ask Claude to implement it.</li>
+<li>Run tests and inspect the changes.</li>
+</ol>
+
+<h3>Test-driven workflow</h3>
+<pre><code>Provide context
+  ↓
+Generate test cases
+  ↓
+Implement selected tests
+  ↓
+Implement code
+  ↓
+Run tests
+  ↓
+Iterate until passing</code></pre>
+<p>This provides explicit success criteria and generally produces more reliable changes.</p>
+
+<h3>Registering MCP servers in Claude Code</h3>
+<p>Claude Code includes an MCP client, allowing it to connect to custom servers.</p>
+<pre><code>claude mcp add [server-name] [command-to-start-server]</code></pre>
+<p>Example:</p>
+<pre><code>claude mcp add documents uv run main.py</code></pre>
+<p>After registration, Claude Code can use the server's:</p>
+<ul>
+<li>Tools for actions.</li>
+<li>Resources for data.</li>
+<li>Prompts for reusable workflows.</li>
+</ul>
+
+<h3>Example workflow</h3>
+<p>A document-processing MCP server might expose:</p>
+<pre><code>document_path_to_markdown(file_path)</code></pre>
+<p>Claude Code could then use it to convert a <code>.docx</code> or PDF file into Markdown without requiring the main application to implement the document parser itself.</p>
+
+<h3>MCP design checklist</h3>
+<h3>Server design</h3>
+<ul>
+<li>Define a clear server purpose.</li>
+<li>Expose narrow, composable tools.</li>
+<li>Use descriptive tool names and descriptions.</li>
+<li>Use type hints and Pydantic <code>Field</code> descriptions.</li>
+<li>Validate identifiers and user inputs.</li>
+<li>Return structured data when appropriate.</li>
+<li>Use accurate MIME types for resources.</li>
+<li>Raise descriptive errors.</li>
+<li>Avoid exposing unnecessary permissions.</li>
+<li>Test every operation with the inspector.</li>
+</ul>
+
+<h3>Client design</h3>
+<ul>
+<li>Encapsulate the SDK session.</li>
+<li>Implement tool discovery.</li>
+<li>Implement tool execution.</li>
+<li>Implement resource reading when needed.</li>
+<li>Implement prompt discovery and retrieval when needed.</li>
+<li>Parse content based on MIME type.</li>
+<li>Clean up sessions and subprocesses.</li>
+<li>Keep application logic independent from transport details.</li>
+</ul>
+
+<h3>Agent integration</h3>
+<ul>
+<li>Give the model only the tools it needs.</li>
+<li>Use resources for context retrieval.</li>
+<li>Use tools for actions.</li>
+<li>Use prompts for repeatable, domain-specific workflows.</li>
+<li>Require confirmation before destructive or external side-effecting operations.</li>
+<li>Log tool calls and failures.</li>
+<li>Treat external tool output as untrusted input.</li>
+<li>Apply authentication, authorization, validation, rate limits, and least privilege.</li>
+</ul>
+
+<h3>Key distinctions to remember</h3>
+<pre><code>MCP server = packages and exposes capabilities
+MCP client = discovers and invokes capabilities
+Tool = performs an action
+Resource = provides data
+Prompt = provides reusable instructions
+Model = chooses how to use the exposed capabilities
+Application = orchestrates the complete interaction</code></pre>
+<p>The central advantage of MCP is <strong>integration reuse</strong>: developers can connect AI applications to external systems through standardized servers instead of repeatedly writing and maintaining custom schemas, API clients, and execution code.</p>
+</section>
+</div>
 </main>
 </body>
 </html>
