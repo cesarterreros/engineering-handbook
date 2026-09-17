@@ -1503,6 +1503,279 @@ Model = chooses how to use the exposed capabilities
 Application = orchestrates the complete interaction</code></pre>
 <p>The central advantage of MCP is <strong>integration reuse</strong>: developers can connect AI applications to external systems through standardized servers instead of repeatedly writing and maintaining custom schemas, API clients, and execution code.</p>
 </section>
+
+<section class="section">
+<h2>15. AI Workflows and Agents</h2>
+
+<h3>Core distinction</h3>
+<p><strong>Workflow:</strong> A predefined sequence of LLM calls and processing steps for a known problem. Use it when you can describe the solution flow in advance.</p>
+<p><strong>Agent:</strong> Give the model a goal, tools, and environment access; the model decides which steps and tools to use. Use it when the task, parameters, or solution path are unpredictable.</p>
+
+<table>
+<thead><tr><th>Aspect</th><th>Workflow</th><th>Agent</th></tr></thead>
+<tbody>
+<tr><td>Execution</td><td>Predetermined sequence</td><td>Dynamically planned</td></tr>
+<tr><td>Best for</td><td>Well-defined, repeatable tasks</td><td>Novel or variable tasks</td></tr>
+<tr><td>Reliability</td><td>Generally higher</td><td>Generally lower</td></tr>
+<tr><td>Testing</td><td>Easier to instrument and evaluate</td><td>More difficult to predict and evaluate</td></tr>
+<tr><td>Flexibility</td><td>Limited</td><td>High</td></tr>
+<tr><td>Planning effort</td><td>More upfront design</td><td>Less rigid upfront design</td></tr>
+<tr><td>Production guidance</td><td>Preferred when sufficient</td><td>Use only when flexibility is genuinely required</td></tr>
+</tbody>
+</table>
+
+<p><strong>Engineering rule:</strong> Prefer workflows whenever they can reliably solve the problem. Use agents only when the exact process cannot be predetermined.</p>
+
+<h3>Common workflow patterns</h3>
+<p>These patterns help structure repeated AI tasks when the problem can be split into reliable steps, explicit evaluation criteria, or specialized pipelines.</p>
+
+<h3>Evaluator–optimizer</h3>
+<p>Use this pattern when an output can be generated, evaluated against criteria, and iteratively improved.</p>
+<pre><code>Input
+  ↓
+Producer → Output
+  ↓
+Grader/evaluator
+  ├─ Accept → Finish
+  └─ Reject → Feedback → Producer → Repeat</code></pre>
+<p>Components:</p>
+<ul>
+<li><strong>Producer:</strong> Generates or modifies the output.</li>
+<li><strong>Grader:</strong> Checks the output against explicit quality criteria.</li>
+<li><strong>Feedback loop:</strong> Sends detected problems back to the producer.</li>
+<li><strong>Iteration:</strong> Continues until the result meets the acceptance criteria.</li>
+</ul>
+<p>Example: image → object description → CAD model → rendering → comparison with original → correction if necessary.</p>
+<p>Use it for generated code, CAD models, documents, media, reports, and other outputs with verifiable quality requirements.</p>
+
+<h3>Parallelization workflow</h3>
+<p>Use parallelization when a complex decision can be divided into independent evaluations.</p>
+<pre><code>Input
+ ├─ Specialized evaluator A
+ ├─ Specialized evaluator B
+ ├─ Specialized evaluator C
+ └─ Specialized evaluator N
+          ↓
+      Aggregator
+          ↓
+    Final decision</code></pre>
+<p>Implementation:</p>
+<ol>
+<li>Split the task into focused sub-tasks.</li>
+<li>Run independent sub-tasks concurrently.</li>
+<li>Give each sub-task specialized prompts, tools, or criteria.</li>
+<li>Aggregate the results.</li>
+<li>Use a final LLM call or deterministic function to produce the decision.</li>
+</ol>
+<p>Example: evaluate an object independently for metal, polymer, ceramic, composite, elastomer, and wood suitability, then aggregate the analyses into one recommendation.</p>
+<p>Benefits:</p>
+<ul>
+<li>Reduces cognitive load on the model.</li>
+<li>Enables deeper analysis of each dimension.</li>
+<li>Allows prompts to be optimized independently.</li>
+<li>Makes adding new evaluation categories easier.</li>
+<li>Improves consistency and scalability.</li>
+</ul>
+<p>Use it when sub-tasks are genuinely independent. Do not parallelize steps that depend on the output of another step.</p>
+
+<h3>Chaining workflow</h3>
+<p>Use chaining when a task consists of sequential, dependent steps or when one large prompt produces unreliable results.</p>
+<pre><code>Task input
+  ↓
+Step 1 → Step 2 → Optional code/tool processing → Step 3</code></pre>
+<p>Key characteristics:</p>
+<ul>
+<li>Sub-tasks execute sequentially.</li>
+<li>Each step receives the previous step’s output.</li>
+<li>Non-LLM processing can occur between calls.</li>
+<li>Each model call focuses on one responsibility.</li>
+</ul>
+<p>Example:</p>
+<pre><code>Find trending topics
+  → Select a topic
+  → Research it
+  → Write a video script
+  → Generate the video
+  → Publish it</code></pre>
+
+<h3>Constraint-revision pattern</h3>
+<p>Instead of asking the model to create content and satisfy many constraints simultaneously:</p>
+<ol>
+<li>Generate the initial draft.</li>
+<li>Send the draft to a second call.</li>
+<li>Ask the second call to check and correct specific violations.</li>
+</ol>
+<p>Example revision instructions:</p>
+<pre><code>Revise the article below:
+1. Remove statements identifying the author as an AI.
+2. Remove all emojis.
+3. Replace awkward or clichéd writing with professional technical language.</code></pre>
+<p>Use chaining when:</p>
+<ul>
+<li>The task has multiple requirements.</li>
+<li>A long prompt causes the model to ignore constraints.</li>
+<li>Outputs must be validated or transformed between steps.</li>
+<li>Steps cannot run independently.</li>
+<li>You want each interaction to remain focused and manageable.</li>
+</ul>
+
+<h3>Routing workflow</h3>
+<p>Use routing when different input categories require different prompts, tools, or processing pipelines.</p>
+<pre><code>User input
+    ↓
+Router/classifier
+    ↓
+Category
+ ├─ Educational pipeline
+ ├─ Entertainment pipeline
+ ├─ Review pipeline
+ └─ Other specialized pipeline</code></pre>
+<p>Process:</p>
+<ol>
+<li>Define mutually useful categories.</li>
+<li>Ask the model or a classifier to assign the input to one category.</li>
+<li>Select the category-specific prompt or pipeline.</li>
+<li>Process the request using only that specialized path.</li>
+</ol>
+<p>Example categories for video generation:</p>
+<ul>
+<li>Educational.</li>
+<li>Entertainment.</li>
+<li>Comedy.</li>
+<li>Personal vlog.</li>
+<li>Reviews.</li>
+<li>Storytelling.</li>
+</ul>
+<p>Example classifier prompt:</p>
+<pre><code>Categorize the topic into exactly one category:
+
+&lt;topic&gt;Python functions&lt;/topic&gt;
+
+&lt;categories&gt;
+- Educational
+- Entertainment
+- Comedy
+- Personal vlog
+- Reviews
+- Storytelling
+&lt;/categories&gt;</code></pre>
+<p>The category determines the specialized generation prompt. For example, an educational pipeline should emphasize clarity, definitions, digestible explanations, relatable examples, and useful questions.</p>
+<p>Use routing when:</p>
+<ul>
+<li>Requests differ significantly in style or domain.</li>
+<li>Categories can be defined clearly.</li>
+<li>Classification is reliable enough.</li>
+<li>Specialized processing improves quality more than the routing step increases latency and cost.</li>
+</ul>
+
+<h3>Agent design and operations</h3>
+<p>Once the model needs to act on the environment, the design focus shifts to tool composition, inspection, and safe operation.</p>
+
+<h3>Agent tool design</h3>
+<p>Agents become powerful when they can combine simple, reusable tools in different sequences.</p>
+<p>Prefer <strong>abstract, composable tools</strong> over tools tied to one narrow task.</p>
+<p>Good general-purpose tools:</p>
+<ul>
+<li><code>bash</code>: Execute commands.</li>
+<li><code>read</code>: Read files.</li>
+<li><code>write</code>: Create files.</li>
+<li><code>edit</code>: Modify files.</li>
+<li><code>glob</code>: Find files by pattern.</li>
+<li><code>grep</code>: Search file contents.</li>
+</ul>
+<p>Avoid exposing only highly specialized tools such as <code>refactor_code</code> or <code>install_dependencies</code>. General tools let the agent adapt to scenarios that were not explicitly anticipated.</p>
+<p>Example tool set for a media agent:</p>
+<ul>
+<li><code>bash</code> with FFmpeg access.</li>
+<li><code>generate_image</code>.</li>
+<li><code>text_to_speech</code>.</li>
+<li><code>post_media</code>.</li>
+</ul>
+<p>A composable tool set can support both a fixed process and adaptive behavior, such as generating a sample, requesting user approval, and then continuing with full production.</p>
+
+<h3>Environment inspection</h3>
+<p>An agent must be able to observe the effects of its actions. Without inspection, it is effectively executing commands blindly.</p>
+<p>Design every action around this question:</p>
+<blockquote>
+<p>How will the agent know whether the action worked?</p>
+</blockquote>
+<p>Inspection techniques:</p>
+<ul>
+<li>Read files before modifying them.</li>
+<li>Capture screenshots after UI interactions.</li>
+<li>Inspect API responses for expected values.</li>
+<li>Validate generated files and content.</li>
+<li>Compare outputs against the original requirements.</li>
+<li>Run tests or verification commands after changes.</li>
+</ul>
+
+<h3>Safe file modification</h3>
+<pre><code>Read current file
+  ↓
+Understand structure and dependencies
+  ↓
+Edit file
+  ↓
+Run validation/tests
+  ↓
+Inspect result</code></pre>
+<p>Reading before writing helps preserve existing behavior and prevents changes from being made without understanding the current structure.</p>
+
+<h3>Media verification example</h3>
+<p>For a video-generation agent:</p>
+<ul>
+<li>Use Whisper or <code>whisper.cpp</code> to create timestamped captions.</li>
+<li>Use FFmpeg to extract screenshots at regular intervals.</li>
+<li>Check that dialogue, captions, and visual elements appear at the correct times.</li>
+<li>Compare the result with the original requirements.</li>
+<li>Correct and re-render when necessary.</li>
+</ul>
+<p>Environment inspection improves:</p>
+<ul>
+<li>Progress tracking.</li>
+<li>Error detection and recovery.</li>
+<li>Quality assurance.</li>
+<li>Adaptive decision-making.</li>
+</ul>
+
+<h3>Selection checklist</h3>
+<p>Choose a <strong>workflow</strong> when:</p>
+<ul>
+<li>The steps are known in advance.</li>
+<li>The task is repeatable.</li>
+<li>Reliability and predictable behavior matter.</li>
+<li>You need straightforward testing and evaluation.</li>
+<li>The product UX already constrains the available actions.</li>
+</ul>
+<p>Choose an <strong>agent</strong> when:</p>
+<ul>
+<li>The task path cannot be predicted.</li>
+<li>Users may provide varied or novel requests.</li>
+<li>The model must decide which tools to use.</li>
+<li>The agent may need to ask for missing information.</li>
+<li>Creative tool combinations are valuable.</li>
+</ul>
+<p>Choose a <strong>parallel workflow</strong> when independent analyses can run concurrently.</p>
+<p>Choose a <strong>chaining workflow</strong> when steps depend on previous outputs.</p>
+<p>Choose an <strong>evaluator–optimizer</strong> when results can be judged against explicit criteria and improved iteratively.</p>
+<p>Choose a <strong>routing workflow</strong> when inputs fall into categories requiring distinct processing.</p>
+
+<h3>Production design principles</h3>
+<ul>
+<li>Decompose complex tasks rather than relying on one massive prompt.</li>
+<li>Keep each LLM call focused on one responsibility.</li>
+<li>Make evaluation criteria explicit.</li>
+<li>Use deterministic code for transformations and validation when possible.</li>
+<li>Parallelize only independent work.</li>
+<li>Chain dependent work.</li>
+<li>Route requests to specialized pipelines.</li>
+<li>Give agents tools that are abstract, observable, and composable.</li>
+<li>Add inspection after every important action.</li>
+<li>Validate outputs before declaring the task complete.</li>
+<li>Prefer the simplest architecture that meets the requirements.</li>
+<li>Start with a workflow; upgrade to an agent only when the workflow is insufficient.</li>
+</ul>
+</section>
 </div>
 </main>
 </body>
