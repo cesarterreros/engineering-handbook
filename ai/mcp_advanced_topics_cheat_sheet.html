@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP Advanced Topics Cheat Sheet</title>
+<style>
+:root {
+  --ink: #303030;
+  --heading: #303030;
+  --muted: #5b5b5b;
+  --rule: #d6d6d6;
+  --code-bg: #eeeeee;
+  --code-ink: #222222;
+  --inline-code: #666666;
+  --keyword: #0000ff;
+  --string: #b00000;
+  --number: #008000;
+  --comment: #777777;
+  --link: #1f5f9b;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background: #fff;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: 10pt;
+  line-height: 1.38;
+}
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 28px 34px 40px;
+}
+h1, h2, h3 { color: var(--heading); line-height: 1.2; page-break-after: avoid; }
+h1 {
+  font-size: 22pt;
+  margin: 0 0 8px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--rule);
+}
+h2 {
+  font-size: 14pt;
+  margin: 0 0 7px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--rule);
+}
+h3 {
+  font-size: 11pt;
+  margin: 10px 0 4px;
+}
+p { margin: 5px 0; }
+strong { font-weight: 700; }
+em { color: var(--muted); }
+blockquote {
+  margin: 8px 0 12px;
+  padding: 7px 11px;
+  background: #f2f2f2;
+  border-left: 3px solid #999;
+  color: #424242;
+  break-inside: avoid;
+}
+blockquote p { margin: 0; }
+ul, ol { margin: 5px 0; padding-left: 19px; }
+li { margin: 2px 0; }
+li::marker { color: #666; }
+code {
+  color: var(--inline-code);
+  background: var(--code-bg);
+  border-radius: 3px;
+  padding: 1px 3px;
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: .88em;
+}
+pre {
+  margin: 7px 0;
+  padding: 9px 11px;
+  background: var(--code-bg);
+  color: var(--code-ink);
+  border-radius: 4px;
+  overflow-x: auto;
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 8.2pt;
+  line-height: 1.32;
+  white-space: pre-wrap;
+  word-break: break-word;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+pre code { padding: 0; color: inherit; background: transparent; white-space: inherit; }
+.kw { color: var(--keyword); }
+.str { color: var(--string); }
+.num { color: var(--number); }
+.com { color: var(--comment); font-style: italic; }
+.attr { color: #006060; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 7px 0;
+  font-size: 9pt;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+th, td { border-bottom: 1px solid var(--rule); padding: 4px 7px; text-align: left; vertical-align: top; }
+th { font-weight: 700; }
+td:first-child { width: 34%; }
+.section {
+  margin: 12px 0 24px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.columns {
+  column-count: 2;
+  column-gap: 20px;
+  column-rule: 1px solid #e2e2e2;
+  column-fill: auto;
+}
+.section h2 { break-after: avoid; }
+@media screen and (max-width: 760px) {
+  .page { padding: 20px 18px; }
+  .columns { column-count: 1; column-rule: 0; }
+}
+@page { size: A4; margin: 12mm 13mm; }
+@media print {
+  body { font-size: 9.2pt; }
+  .page { max-width: none; padding: 0; }
+  .columns { column-fill: auto; }
+  .section { break-inside: auto; page-break-inside: auto; }
+  h1 { font-size: 19pt; }
+  h2 { font-size: 12.5pt; }
+  h3 { font-size: 10pt; }
+  pre { font-size: 7.25pt; padding: 7px 8px; }
+  table { font-size: 8.2pt; }
+  .section { margin: 9px 0 24px; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+<h1>MCP Advanced Topics Cheat Sheet</h1>
+<blockquote><p>Practical reference for advanced Model Context Protocol behavior, transport constraints, and client/server communication patterns. Verify details against the current MCP specification and SDK behavior before production use.</p></blockquote>
+
+<div class="columns">
+<section class="section">
+<h2>1. Sampling</h2>
+<p><strong>Sampling</strong> lets an MCP server request text generation through the connected MCP client instead of calling an LLM directly.</p>
+<h3>Why use it?</h3>
+<ul>
+<li>The server does not need an LLM API key.</li>
+<li>The server avoids implementing provider-specific SDK integration.</li>
+<li>The client—not the server—pays for token usage.</li>
+<li>It is especially useful for public MCP servers, preventing the server owner from paying for every user's generation request.</li>
+<li>It shifts LLM authentication, billing, and model access to the client.</li>
+</ul>
+<h3>Request flow</h3>
+<ol>
+<li>The server performs its primary task, such as collecting research data.</li>
+<li>The server builds a prompt.</li>
+<li>The server sends a sampling request to the client.</li>
+<li>The client calls its configured language model.</li>
+<li>The client returns the generated content.</li>
+<li>The server uses that content in its final response.</li>
+</ol>
+<h3>Server-side pattern</h3>
+<pre><code><span class="attr">@mcp.tool()</span>
+<span class="kw">async def</span> summarize(text_to_summarize: str, ctx: Context):
+    prompt = <span class="str">f"""
+    Please summarize the following text:
+    {text_to_summarize}
+    """</span>
+
+    result = <span class="kw">await</span> ctx.session.create_message(
+        messages=[
+            SamplingMessage(
+                role=<span class="str">"user"</span>,
+                content=TextContent(
+                    type=<span class="str">"text"</span>,
+                    text=prompt
+                )
+            )
+        ],
+        max_tokens=<span class="num">4000</span>,
+        system_prompt=<span class="str">"You are a helpful research assistant"</span>,
+    )
+
+    <span class="kw">if</span> result.content.type == <span class="str">"text"</span>:
+        <span class="kw">return</span> result.content.text
+
+    <span class="kw">raise</span> ValueError(<span class="str">"Sampling failed"</span>)</code></pre>
+<h3>Client-side requirements</h3>
+<p>The client must provide a sampling callback that invokes its own model:</p>
+<pre><code><span class="kw">async def</span> sampling_callback(
+    context: RequestContext,
+    params: CreateMessageRequestParams
+):
+    text = <span class="kw">await</span> chat(params.messages)
+
+    <span class="kw">return</span> CreateMessageResult(
+        role=<span class="str">"assistant"</span>,
+        model=model,
+        content=TextContent(type=<span class="str">"text"</span>, text=text),
+    )</code></pre>
+<p>Register it when creating the session:</p>
+<pre><code><span class="kw">async with</span> ClientSession(
+    read,
+    write,
+    sampling_callback=sampling_callback
+) <span class="kw">as</span> session:
+    <span class="kw">await</span> session.initialize()</code></pre>
+<p><strong>Design principle:</strong> MCP sampling provides model access without coupling the server to a specific LLM provider.</p>
+</section>
+
+<section class="section">
+<h2>2. Logging and Progress</h2>
+<p>Logging and progress notifications improve the user experience during long-running tool calls. Without them, users may not know whether a tool is still running or has stalled.</p>
+<h3>Server-side context methods</h3>
+<ul>
+<li><code>context.info(message)</code> sends a log message.</li>
+<li><code>context.report_progress(progress, total)</code> reports execution progress.</li>
+</ul>
+<pre><code><span class="attr">@mcp.tool(
+    name="research",
+    description="Research a given topic"
+)</span>
+<span class="kw">async def</span> research(
+    topic: str,
+    *,
+    context: Context
+):
+    <span class="kw">await</span> context.info(<span class="str">"About to do research..."</span>)
+    <span class="kw">await</span> context.report_progress(<span class="num">20</span>, <span class="num">100</span>)
+
+    sources = <span class="kw">await</span> do_research(topic)
+
+    <span class="kw">await</span> context.info(<span class="str">"Writing report..."</span>)
+    <span class="kw">await</span> context.report_progress(<span class="num">70</span>, <span class="num">100</span>)
+
+    <span class="kw">return await</span> generate_report(sources)</code></pre>
+<h3>Client-side callbacks</h3>
+<pre><code><span class="kw">async def</span> logging_callback(
+    params: LoggingMessageNotificationParams
+):
+    print(params.data)</code></pre>
+<pre><code><span class="kw">async def</span> print_progress_callback(
+    progress: float,
+    total: float | None,
+    message: str | None
+):
+    <span class="kw">if</span> total <span class="kw">is not None</span>:
+        percentage = (progress / total) * <span class="num">100</span>
+        print(f<span class="str">"Progress: {progress}/{total} ({percentage:.1f}%)"</span>)
+    <span class="kw">else</span>:
+        print(f<span class="str">"Progress: {progress}"</span>)</code></pre>
+<p>Register logging at session creation and progress when calling a tool:</p>
+<pre><code><span class="kw">async with</span> ClientSession(
+    read,
+    write,
+    logging_callback=logging_callback
+) <span class="kw">as</span> session:
+    <span class="kw">await</span> session.initialize()
+
+    <span class="kw">await</span> session.call_tool(
+        name=<span class="str">"research"</span>,
+        arguments={<span class="str">"topic"</span>: <span class="str">"MCP"</span>},
+        progress_callback=print_progress_callback,
+    )</code></pre>
+<h3>Presentation options</h3>
+<table>
+<thead><tr><th>Application</th><th>Possible implementation</th></tr></thead>
+<tbody>
+<tr><td>CLI</td><td>Print logs and progress to the terminal.</td></tr>
+<tr><td>Web application</td><td>WebSockets, Server-Sent Events, or polling.</td></tr>
+<tr><td>Desktop application</td><td>Progress bars and status indicators.</td></tr>
+</tbody>
+</table>
+<p>These notifications are optional and primarily provide user-experience improvements.</p>
+</section>
+
+<section class="section">
+<h2>3. Roots and File Access</h2>
+<p><strong>Roots</strong> define the local files and directories that an MCP server is allowed to access.</p>
+<h3>Problems roots solve</h3>
+<p>Without roots:</p>
+<ul>
+<li>The model may not know where a user's file is located.</li>
+<li>Users would need to provide complete file paths.</li>
+<li>The server could potentially search too broadly across the filesystem.</li>
+</ul>
+<p>With roots:</p>
+<ol>
+<li>The user asks to operate on a file, such as <code>biking.mp4</code>.</li>
+<li>The client exposes approved directories through <code>list_roots</code>.</li>
+<li>The model searches those directories.</li>
+<li>The server receives the resolved path.</li>
+<li>The tool performs the operation only within the approved boundaries.</li>
+</ol>
+<h3>Security model</h3>
+<p>Roots provide boundaries such as:</p>
+<ul>
+<li>Allow access to <code>Desktop</code>.</li>
+<li>Deny access to <code>Documents</code>, <code>Downloads</code>, or other directories.</li>
+<li>Prevent accidental access to sensitive files.</li>
+<li>Reduce search scope and improve file-discovery performance.</li>
+</ul>
+<h3>Important implementation warning</h3>
+<p>The MCP SDK does <strong>not</strong> automatically enforce root restrictions. The server must validate paths itself.</p>
+<p>A typical helper should:</p>
+<ol>
+<li>Receive the requested path.</li>
+<li>Retrieve the approved roots.</li>
+<li>Normalize or resolve the requested path.</li>
+<li>Check whether the resolved path is inside an approved root.</li>
+<li>Reject the operation if it is outside the allowed boundaries.</li>
+</ol>
+<p>Conceptually:</p>
+<pre><code><span class="kw">def</span> is_path_allowed(requested_path, allowed_roots):
+    resolved_path = requested_path.resolve()
+
+    <span class="kw">return any</span>(
+        resolved_path.is_relative_to(root.resolve())
+        <span class="kw">for</span> root <span class="kw">in</span> allowed_roots
+    )</code></pre>
+<p>Always perform this validation before reading, writing, converting, deleting, or executing operations on a file.</p>
+<p><strong>Security rule:</strong> Never treat a user-provided path as trusted merely because it appears to be inside an allowed directory; resolve it first to prevent traversal attacks.</p>
+</section>
+
+<section class="section">
+<h2>4. MCP Message Types</h2>
+<p>MCP communication uses JSON messages defined by the official MCP specification.</p>
+<h3>Request-result messages</h3>
+<p>These messages form request/response pairs:</p>
+<ul>
+<li><code>Call Tool Request</code> → <code>Call Tool Result</code></li>
+<li><code>List Prompts Request</code> → <code>List Prompts Result</code></li>
+<li><code>Read Resource Request</code> → <code>Read Resource Result</code></li>
+<li><code>Initialize Request</code> → <code>Initialize Result</code></li>
+</ul>
+<h3>Notifications</h3>
+<p>Notifications are one-way messages and do not require a response:</p>
+<ul>
+<li>Progress notifications.</li>
+<li>Logging message notifications.</li>
+<li>Tool-list-changed notifications.</li>
+<li>Resource-updated notifications.</li>
+<li>Initialized notifications.</li>
+<li>Cancellation notifications.</li>
+</ul>
+<h3>Bidirectional communication</h3>
+<p>MCP is bidirectional:</p>
+<ul>
+<li>Clients can send requests to servers.</li>
+<li>Servers can send requests to clients.</li>
+<li>Either side can send notifications.</li>
+<li>Sampling and roots require server-to-client communication.</li>
+</ul>
+<p>This distinction is critical when selecting a transport because some HTTP configurations restrict server-initiated communication.</p>
+</section>
+
+<section class="section">
+<h2>5. STDIO Transport</h2>
+<p>STDIO is commonly used for local development and testing.</p>
+<h3>How it works</h3>
+<ul>
+<li>The client launches the MCP server as a subprocess.</li>
+<li>Client messages are written to the server's <code>stdin</code>.</li>
+<li>Server messages are written to <code>stdout</code>.</li>
+<li>Both sides can initiate communication.</li>
+<li>Client and server must run on the same machine.</li>
+</ul>
+<h3>Initialization handshake</h3>
+<p>Every standard MCP connection begins with:</p>
+<ol>
+<li>Client sends <code>Initialize Request</code>.</li>
+<li>Server returns <code>Initialize Result</code>, including capabilities.</li>
+<li>Client sends <code>Initialized Notification</code>.</li>
+</ol>
+<p>Only after this handshake should the client call tools, list prompts, or read resources.</p>
+<h3>Four communication patterns</h3>
+<p>STDIO supports all four directions:</p>
+<ul>
+<li>Client → server request.</li>
+<li>Server → client response.</li>
+<li>Server → client request.</li>
+<li>Client → server response.</li>
+</ul>
+<p><strong>Best use:</strong> Local development, testing, desktop integrations, and full bidirectional MCP functionality.</p>
+</section>
+
+<section class="section">
+<h2>6. Streamable HTTP Transport</h2>
+<p>Streamable HTTP enables clients to connect to remotely hosted MCP servers.</p>
+<h3>Why it is more complex</h3>
+<p>HTTP naturally supports:</p>
+<ul>
+<li>Client requests to servers.</li>
+<li>Server responses to clients.</li>
+</ul>
+<p>HTTP does not naturally support:</p>
+<ul>
+<li>Server-initiated requests.</li>
+<li>Real-time server-to-client notifications.</li>
+<li>Responses routed through a persistent client connection.</li>
+</ul>
+<p>MCP solves this using Server-Sent Events (SSE).</p>
+<h3>Stateful connection flow</h3>
+<ol>
+<li>The client sends an initialization request.</li>
+<li>The server returns an initialization result with an <code>mcp-session-id</code> header.</li>
+<li>The client sends an initialized notification.</li>
+<li>The client opens a long-lived GET/SSE connection.</li>
+<li>The server uses the SSE connection for server-to-client messages.</li>
+<li>The client uses POST requests for tool calls and other requests.</li>
+</ol>
+<p>The session ID must be included in subsequent requests.</p>
+<h3>Dual-connection model</h3>
+<table>
+<thead><tr><th>Connection</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>Primary SSE connection</td><td>Server-initiated requests and progress notifications; remains open.</td></tr>
+<tr><td>Tool-specific SSE connection</td><td>Logging messages and tool results for an individual call.</td></tr>
+</tbody>
+</table>
+<p>Understanding this model is important when debugging remote MCP deployments.</p>
+</section>
+
+<section class="section">
+<h2>7. <code>stateless_http</code> and <code>json_response</code></h2>
+<p>These flags can simplify deployment but disable important MCP capabilities.</p>
+<h3><code>stateless_http=True</code></h3>
+<p>Stateless mode removes session state and is useful for horizontal scaling behind a load balancer.</p>
+<p>Trade-offs:</p>
+<ul>
+<li>No session IDs.</li>
+<li>No server-to-client request channel.</li>
+<li>No sampling.</li>
+<li>No progress notifications.</li>
+<li>No subscriptions or resource-update notifications.</li>
+<li>Initialization is not required.</li>
+<li>Requests can be handled independently by different server instances.</li>
+</ul>
+<p>Use it when:</p>
+<ul>
+<li>You need simple horizontal scaling.</li>
+<li>Your tools do not require sampling.</li>
+<li>You do not need progress or logging streaming.</li>
+<li>You want to minimize connection coordination.</li>
+</ul>
+<h3><code>json_response=True</code></h3>
+<p>This disables streaming for POST responses and returns only the final result as plain JSON.</p>
+<p>Trade-offs:</p>
+<ul>
+<li>No intermediate progress messages.</li>
+<li>No live log messages.</li>
+<li>No streaming tool output.</li>
+<li>Only the final tool result is returned.</li>
+</ul>
+<p>Use it when:</p>
+<ul>
+<li>The integration expects ordinary JSON responses.</li>
+<li>Streaming is unnecessary.</li>
+<li>Simpler HTTP behavior is more important than live updates.</li>
+</ul>
+<h3>Feature impact matrix</h3>
+<table>
+<thead><tr><th>Feature</th><th>Stateful streaming HTTP</th><th><code>stateless_http=True</code></th><th><code>json_response=True</code></th></tr></thead>
+<tbody>
+<tr><td>Session IDs</td><td>Yes</td><td>No</td><td>Usually yes</td></tr>
+<tr><td>Initialization handshake</td><td>Yes</td><td>Not required</td><td>Yes</td></tr>
+<tr><td>Sampling</td><td>Yes</td><td>No</td><td>Potentially limited</td></tr>
+<tr><td>Progress notifications</td><td>Yes</td><td>No</td><td>No streaming progress</td></tr>
+<tr><td>Logging during execution</td><td>Yes</td><td>No</td><td>No intermediate logs</td></tr>
+<tr><td>Subscriptions</td><td>Yes</td><td>No</td><td>Potentially limited</td></tr>
+<tr><td>Horizontal scaling simplicity</td><td>Lower</td><td>Higher</td><td>Higher</td></tr>
+<tr><td>Final JSON result</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+</tbody>
+</table>
+<p><strong>Key rule:</strong> Do not enable stateless or JSON-only modes merely because they simplify deployment. First verify that your application does not depend on sampling, notifications, subscriptions, or server-initiated requests.</p>
+</section>
+
+<section class="section">
+<h2>8. Transport Selection</h2>
+<table>
+<thead><tr><th>Requirement</th><th>Recommended transport/configuration</th></tr></thead>
+<tbody>
+<tr><td>Local development</td><td>STDIO</td></tr>
+<tr><td>Full bidirectional communication</td><td>STDIO or stateful Streamable HTTP</td></tr>
+<tr><td>Remote MCP server</td><td>Streamable HTTP</td></tr>
+<tr><td>Sampling through the client</td><td>Stateful Streamable HTTP or STDIO</td></tr>
+<tr><td>Real-time progress and logs</td><td>Stateful streaming transport</td></tr>
+<tr><td>Simple load-balanced deployment</td><td>Stateless HTTP, if advanced features are unnecessary</td></tr>
+<tr><td>Plain JSON integration</td><td><code>json_response=True</code>, if streaming is unnecessary</td></tr>
+</tbody>
+</table>
+<h3>Development recommendation</h3>
+<p>Test with the same transport and configuration that will be used in production. A server that works under STDIO may fail after deployment if HTTP settings disable:</p>
+<ul>
+<li>Sampling.</li>
+<li>Progress callbacks.</li>
+<li>Logging.</li>
+<li>Server-initiated requests.</li>
+<li>Resource subscriptions.</li>
+</ul>
+</section>
+</div>
+
+<section class="section">
+<h2>Core Takeaways</h2>
+<ul>
+<li>Sampling lets servers use the client's model access without owning API keys or token costs.</li>
+<li>Context-based logging and progress make long-running tools observable.</li>
+<li>Roots improve file discovery but require explicit server-side path enforcement.</li>
+<li>MCP is bidirectional, so transport limitations matter.</li>
+<li>STDIO provides the simplest full-featured communication model.</li>
+<li>Stateful Streamable HTTP preserves advanced functionality through SSE.</li>
+<li><code>stateless_http=True</code> improves scalability but disables server-to-client features.</li>
+<li><code>json_response=True</code> simplifies responses but removes streaming behavior.</li>
+</ul>
+</section>
+</main>
+</body>
+</html>
